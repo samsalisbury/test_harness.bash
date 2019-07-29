@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+source test_harness.bash
+
+(
+  begin_test one-plus-one
+
+  log "not implemented"
+  got=$((1+1)); want=2
+  [ $got = $want ] || error "1+1=$got, want 1+1=$want"
+)
+
+(
+  begin_test TestHelloWorld
+
+  log "not implemented"
+  got=$((1+1)); want=2
+  [ $got = $want ] || error "1+1=$got, want 1+1=$want"
+)
