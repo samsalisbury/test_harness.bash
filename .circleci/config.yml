@@ -10,14 +10,17 @@ jobs:
   test-singles:
     executor: default
     steps:
+      - checkout
       - run: make test-singles
   test-alls:
     executor: default
     steps:
+      - checkout
       - run: make test-alls
   test:
     executor: default
     steps:
+      - checkout
       - run: make test
 
 workflows:
