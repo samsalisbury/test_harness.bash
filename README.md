@@ -1,18 +1,32 @@
-# simple-bash-tests
+# test_harness.bash
 
-Simple bash tests is designed to be vendored into your project
-by copying the file `test_header.bash` into your project,
-and then sourcing it near the beginning of each test file.
+Simple bash test harness and runner.
 
 ## What?
 
-Copy test_header.bash to your repo then
-write executable test files that look like this file:
+A single file to `source` into other bash files, to make writing bash tests easy.
+`test_harness.bash` can also be invoked itself to locate and run all tests defined in a
+directory hirarchy.
+
+This project is heavily inspired by `go test` and the golang `testing` package.
+
+## Why?
+
+Having recently had to write an inordinate amount of bash scripts, I began to miss my
+safe place writing Go tests, and thus this project was born.
+
+I also wanted a lightweight script I could trivially vendor into any projects that require
+this kind of test.
+
+## How?
+
+Vendor this into your project by copying the single file `test_harness.bash`,
+then write executable test files like this:
 
 ```bash
 #!/usr/bin/env bash
 
-source test_header.bash
+source test_harness.bash
 
 # Each test must be in a subshell, wrapped in parentheses like this:
 (
@@ -22,6 +36,16 @@ source test_header.bash
 
   # Write arbitrary bash. You are in a new, empty working directory
   # so you can freely create new files etc as part of your tests.
+
+  # Use the `run` helper to run any commands that produce output on stderr or
+  # stdout, so you can inspect the output. This also keeps your test output neat,
+  # allowing minimal output for tests that pass, whilst showing full transcripts
+  # for tests that fail.
+  run echo 123
+
+  # Use the `log` helper to write explicit logs to the test outputs, only shown
+  # in VERBOSE mode, or when a test fails.
+  log "Something interesting happened here."
 
   # Write assertions like this. The first arg is a description of
   # the fact you are asserting.
@@ -35,21 +59,5 @@ source test_header.bash
 
   # After a fatal call, nothing else will execute.
 )
-
-(
-  begin_test some-other-test-name
-
-  assert "this will fail" [ "WORKS?!" = "NO!" ]
-)
 ```
-
-
-## Why?
-
-I wanted a simpler thing than BATS,
-and wanted it to be trivial to vendor into your project
-to avoid extra external dependencies.
-
-## How?
-
 
