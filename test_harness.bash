@@ -1,7 +1,46 @@
 #!/usr/bin/env bash
 
+# test_harness.bash is a lightweight bash test harness, similar (ish) to BATS,
+# except it is a single file, designed to be copied into your repo.
+# Its interface and output are strongly influenced by 'go test' and the golang
+# 'testing' package.
+#
+# To write a test, create an executable file called <filename>.test, which
+# uses a bash shebang line, e.g. '#!/usr/bin/env bash' and then sources this file
+# e.g. 'source test_harness.bash. You can then write tests in the following
+# format (note each test must be in parentheses to make it a subshell).
+#
+#   #!/usr/bin/env bash
+#
+#   source test_harness.bash
+#
+#   (
+#     begin_test some-unique-test-name
+#     
+#     [ $((1+1)) = 2 ] || error "maths is broken"
+#     true || fatal "logic is broken"
+#     
+#     run some command you want to test
+#   )
+#
+# After calling begin_test you will be in a fresh, empty working directory
+# named .testdata/<test-file-name>/<test-name>/work so you can safely create
+# files etc in the current directory.
+# 
+# Use 'run' to run arbitrary commands, ensuring their output is logged properly.
+# if the command fails, the test is marked as failed.
+# Use 'error' to fail the test with an error message, but allow it to continue.
+# Use 'fatal' to fail the test with an error message immediately.
+#
+# Executing tests
+#
+# You can directly invoke the test files by calling ./<filename>.test, or
+# invoke ./test_harness.bash to run all test files in the filesystem hierarchy
+# rooted in the current directory.
+
 set -euo pipefail
 
+# SINGLE_FILE_MODE is true when we are sourcing this script in a *.test file.
 SINGLE_FILE_MODE=true
 [ "${BASH_SOURCE[*]}" != "${BASH_SOURCE[0]}" ] || SINGLE_FILE_MODE=false
 
@@ -43,9 +82,17 @@ _println_withline() { DEPTH="$1"; LEVEL="$2" FMT="$3"; shift 3
 
 # Logging functions you can use in your tests.
 debug() { _println_withline 2 2 "$@" >> "$TESTDATA/log"; }
-log()   { _println_withline 2 1 "$@" >> "$TESTDATA/log"; }
+# log uses level 0 because we either print the whole log or none of it at the end.
+# If we are printing the log, then we want all log entries, whether printing was
+# caused by failure or because we are in verbose mode.
+log()   { _println_withline 2 0 "$@" >> "$TESTDATA/log"; }
 error() { _println_withline 2 0 "$@" >> "$TESTDATA/log"; _add_error; }
 fatal() { _println_withline 2 0 "$@" >> "$TESTDATA/log"; _add_error; exit 0; }
+
+debug_noline() { _println 2 "$@" >> "$TESTDATA/log"; }
+log_noline()   { _println 0 "$@" >> "$TESTDATA/log"; }
+error_noline() { _println 0 "$@" >> "$TESTDATA/log"; _add_error; }
+fatal_noline() { _println 0 "$@" >> "$TESTDATA/log"; _add_error; exit 0; }
 
 # Logging functions for internal use (no line numbers, no errors, print direct).
 _debug() { _println 2 "$@"; }
@@ -85,29 +132,33 @@ _handle_file_exit() {
     }
     _log PASS
     _error "ok        $TEST_FILE_NAME" 
+    exit 0
   }
+  exit 0
 }
 
 _handle_test_error() {
   DEPTH=1
-  LINEREF="${BASH_SOURCE[$DEPTH]#./}:$1"
-  echo "_handle_test_error:$LINEREF:$2"
+  LINEREF="${BASH_SOURCE[$DEPTH]#./}"
+  error_noline "Command failed: $1"
+  _add_fail
 }
 
 _handle_test_exit() {
   TEST_EXIT_CODE=$?
-  [ $TEST_EXIT_CODE = 0 ] || error "Test body failed with exit code $TEST_EXIT_CODE"
+  [ $TEST_EXIT_CODE = 0 ] || error_noline "Test body failed with exit code $TEST_EXIT_CODE"
   EC="$(_error_count)"
   [ "$EC" != 0 ] || {
     _log "--- PASS: $TEST_ID (TODO:time)"
     test "$LOG_LEVEL" -eq 0 || _dump_test_log
     exit 1
   }
+  _add_fail
   _error "--- FAIL: $TEST_ID (TODO:time)"
   _dump_test_log
 }
 
-_dump_test_log() { sed 's/^/    /g' < "$TESTDATA/log"; }
+_dump_test_log() { LC_ALL=C sed 's/^/    /g' < "$TESTDATA/log"; }
 
 begin_test() {
   # Determine test name and remove any old test data for this test.
@@ -136,11 +187,28 @@ begin_test() {
   cd "$TEST_WORKDIR"
 }
 
+# run runs the command in a subshell and captures the output in the log.
+run() {
+  echo "\$" "$@" >> "$TESTDATA/log"
+  (
+    exec >> "$TESTDATA/log" 2>&1
+    "$@"
+  )
+}
+
 run_all_test_files() {
   # shellcheck disable=SC2044
-  for F in $(find . -mindepth 1 -maxdepth 1 -name '*.test'); do "$F"; done
+  for F in $(find . -mindepth 1 -maxdepth 1 -name '*.test'); do
+    [ -x "$F" ] || {
+      _log "$F is not executable"
+      continue
+    }
+    grep -F 'test_harness.bash' "$F" > /dev/null 2>&1 || {
+      _log "$F does not mention test_harness.bash"
+      continue
+    }
+    "$F"
+  done
 }
 
 $SINGLE_FILE_MODE || run_all_test_files
-
-#echo "BASH_SOURCE=${BASH_SOURCE[*]}"
