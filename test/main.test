@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+
+DEFAULT_TESTHARNESS="$PWD/../test_harness.bash"
+TESTHARNESS="${TESTHARNESS:-$DEFAULT_TESTHARNESS}"
+
+# shellcheck disable=SC1090
+source "$TESTHARNESS"
+
+add_test_harness() { cp "$TESTHARNESS" ./; }
+
+make_test_file() { local NAME="$1" CONTENT="$2"
+  mkdir -p "$(dirname "$NAME")"
+  printf "#!/usr/bin/env bash\n\nset -euo pipefail\n\n" > "$NAME"
+  printf "source test_harness.bash\n\n" >> "$NAME"
+  echo "$CONTENT" >> "$NAME"
+  chmod +x "$NAME"
+}
+
+(
+  begin_test pass/empty
+  
+  add_test_harness
+  make_test_file "the.test" "
+  (
+    begin_test $TEST_ID
+  )
+  "
+
+  run env VERBOSE=YES ./the.test || error "empty test failed"
+)
+
+(
+  begin_test pass/true
+  
+  add_test_harness
+  make_test_file "the.test" "
+  (
+    begin_test $TEST_ID
+  )
+  "
+
+  run env VERBOSE=YES ./the.test || error "bare true test failed"
+)
+
+(
+  begin_test pass/log
+  
+  add_test_harness
+  make_test_file "the.test" "
+  (
+    begin_test $TEST_ID
+    log 'Hello %s' World
+  )
+  "
+
+  run env VERBOSE=YES ./the.test || error "log failed test"
+)
+
+(
+  begin_test fail/false
+  
+  add_test_harness
+  make_test_file "the.test" "
+  (
+    begin_test $TEST_ID
+    false
+  )
+  "
+
+  if run env VERBOSE=YES ./the.test; then
+    error "bare false did not fail test"
+  fi
+)
+
+(
+  begin_test fail/error
+  
+  add_test_harness
+  make_test_file "the.test" "
+  (
+    begin_test $TEST_ID
+    error 'this is an error'
+  )
+  "
+
+  if run env VERBOSE=YES ./the.test; then
+    error "bare false did not fail test"
+  fi
+)
+
+(
+  begin_test fail/fatal
+  
+  add_test_harness
+  make_test_file "the.test" "
+  (
+    begin_test $TEST_ID
+    error 'this is an error'
+  )
+  "
+
+  if run env VERBOSE=YES ./the.test; then
+    fatal "bare false did not fail test"
+  fi
+)
