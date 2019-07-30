@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# This fundamental test does not use test_harness.bash, but rather
+# ensures that the file simple.test produces the correct output.
+#
+# Given the truth of this, we can build up further tests using the
+# test_harness.bash script itself.
+
+TESTDATA=".testdata/fundamental"
+rm -rf "$TESTDATA"
+TEST_WORKDIR="$TESTDATA/work"
+mkdir -p "$TEST_WORKDIR"
+
+cp ../test_harness.bash "$TEST_WORKDIR/"
+cp simple.test "$TEST_WORKDIR/"
+
+(
+cd "$TEST_WORKDIR"
+GOT_SINGLE="GOT_SINGLE"
+GOT_ALL="GOT_ALL"
+WANT="WANT"
+
+# Write the result of ./simple.test to GOT_SINGLE.
+TESTHARNESS=test_harness.bash VERBOSE=YES ./simple.test > "$GOT_SINGLE"
+
+# Write the result of ./test_harness.bash to GOT_ALL.
+VERBOSE=YES ./test_harness.bash > "$GOT_ALL"
+
+# Write the expected output to WANT.
+cat << EOF > "$WANT"
+=== RUN   simple/ok/empty
+--- PASS: simple/ok/empty (TODO:time)
+=== RUN   simple/ok/true
+--- PASS: simple/ok/true (TODO:time)
+=== RUN   simple/ok/run-echo
+--- PASS: simple/ok/run-echo (TODO:time)
+    $ echo 1
+    1
+PASS
+ok        simple
+EOF
+
+# Let's check our assumptions to be extra safe.
+diff "$WANT" "$WANT" || {
+  echo "    diff not behaving as expected! diff $WANT $WANT not empty!"
+  exit 1
+}
+diff "$GOT_SINGLE" "$GOT_SINGLE" || {
+  echo "    diff not behaving as expected! diff $GOT_SINGLE $GOT_SINGLE not empty!"
+  exit 1
+}
+diff "$GOT_ALL" "$GOT_ALL" || {
+  echo "    diff not behaving as expected! diff $GOT_ALL $GOT_ALL not empty!"
+  exit 1
+}
+
+FAILED=NO
+
+# If these files are different, then we have failed.
+# Eyeball this failure, sometimes you'll need to update
+# expectations in the WANT file above
+echo "=== RUN   fundamental_test/SINGLE"
+if ! diff "$GOT_SINGLE" "$WANT"; then
+  echo "--- FAIL: fundamental_test/SINGLE"
+  echo "    Diff not empty, see above."
+  FAILED=YES
+else
+  echo "--- PASS: fundamental_test/SINGLE"
+fi
+
+echo "=== RUN   fundamental_test/ALL"
+if ! diff "$GOT_ALL" "$WANT"; then
+  echo "--- FAIL: fundamental_test/ALL"
+  echo "    Diff not empty, see above."
+  FAILED=YES
+else
+  echo "--- PASS: fundamental_test/ALL"
+fi
+
+[ $FAILED = NO ] || exit 1
+)

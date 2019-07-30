@@ -49,21 +49,26 @@ SINGLE_FILE_MODE=true
 # of every test.
 export _indent=""
 
-export TEST_FILE_NAME="${0%.test}"
-TEST_FILE_NAME="${TEST_FILE_NAME#./}"
+export TESTDATA_ROOT="$PWD/.testdata"
 
-export LOG_LEVEL=0
+export LOG_LEVEL="${LOG_LEVEL:-1}"
 [ "${QUIET:-}"   != YES ] || LOG_LEVEL=0
 [ "${VERBOSE:-}" != YES ] || LOG_LEVEL=1
 [ "${DEBUG:-}"   != YES ] || LOG_LEVEL=2
+  
 
-export TESTDATA_ROOT="$PWD/.testdata"
-
-# SUITEDATA contains all the individual test SUITEDATA dirs, as well
-# as files with metadata about the test run.
-export SUITEDATA="$TESTDATA_ROOT/$TEST_FILE_NAME"
-rm -rf "$SUITEDATA"
-mkdir -p "$SUITEDATA"
+setup_single_test_file() {
+  export TEST_FILE_NAME="${0%.test}"
+  TEST_FILE_NAME="${TEST_FILE_NAME#./}"  
+ 
+  # SUITEDATA contains all the individual TESTDATA dirs, as well
+  # as files with metadata about the test run for this test suite.
+  export SUITEDATA="$TESTDATA_ROOT/$TEST_FILE_NAME"
+  rm -rf "$SUITEDATA"
+  mkdir -p "$SUITEDATA"
+  _TESTCOUNTER="$SUITEDATA/test-count"
+  _FAILCOUNTER="$SUITEDATA/fail-count"
+}
 
 # _println is an internal function, it prints a formatted line at the
 # current indent.
@@ -106,10 +111,8 @@ _count_read()  { cat "$1" 2> /dev/null || echo 0; }
 _count_up()    { echo $(($(_count_read "$1") + 1)) > "$1"; }
 
 # Test file scoped counters.
-_TESTCOUNTER="$SUITEDATA/test-count"
 _add_test() { _count_up "$_TESTCOUNTER"; }
 _test_count() { _count_read "$_TESTCOUNTER"; }
-_FAILCOUNTER="$SUITEDATA/fail-count"
 _add_fail() { _count_up "$_FAILCOUNTER"; }
 _fail_count() { _count_read "$_FAILCOUNTER"; }
 
@@ -123,17 +126,17 @@ _match() { echo "$1" | grep -E "$2" > /dev/null >&1 || return 1; }
 trap _handle_file_exit EXIT
 
 _handle_file_exit() {
-  $SINGLE_FILE_MODE && {
-    FAIL_COUNT="$(_fail_count)"
-    [ "$FAIL_COUNT" = 0 ] || {
-      _error FAIL
-      _error "fail      $TEST_FILE_NAME" 
-      exit 1
-    }
-    _log PASS
-    _error "ok        $TEST_FILE_NAME" 
-    exit 0
+  CODE=$?
+  $SINGLE_FILE_MODE || exit $CODE
+
+  FAIL_COUNT="$(_fail_count)"
+  [ "$FAIL_COUNT" = 0 ] || {
+    _error FAIL
+    _error "fail      $TEST_FILE_NAME" 
+    exit 1
   }
+  _log PASS
+  _error "ok        $TEST_FILE_NAME" 
   exit 0
 }
 
@@ -144,6 +147,10 @@ _handle_test_error() {
   _add_fail
 }
 
+# _handle_test_exit always overrides the exit code to zero so that further tests can run
+# in spite of set -e. It first sniffs the exit code, as a non-zero test exit code must fail
+# the test. It then checks the error count, increments the test fail count if necessary and
+# prints the result.
 _handle_test_exit() {
   TEST_EXIT_CODE=$?
   [ $TEST_EXIT_CODE = 0 ] || error_noline "Test body failed with exit code $TEST_EXIT_CODE"
@@ -151,11 +158,12 @@ _handle_test_exit() {
   [ "$EC" != 0 ] || {
     _log "--- PASS: $TEST_ID (TODO:time)"
     test "$LOG_LEVEL" -eq 0 || _dump_test_log
-    exit 1
+    exit 0
   }
   _add_fail
   _error "--- FAIL: $TEST_ID (TODO:time)"
   _dump_test_log
+  exit 0
 }
 
 _dump_test_log() { LC_ALL=C sed 's/^/    /g' < "$TESTDATA/log"; }
@@ -197,6 +205,7 @@ run() {
 }
 
 run_all_test_files() {
+  export TESTHARNESS="${BASH_SOURCE[0]}"
   # shellcheck disable=SC2044
   for F in $(find . -mindepth 1 -maxdepth 1 -name '*.test'); do
     [ -x "$F" ] || {
@@ -211,4 +220,4 @@ run_all_test_files() {
   done
 }
 
-$SINGLE_FILE_MODE || run_all_test_files
+if $SINGLE_FILE_MODE; then setup_single_test_file; else run_all_test_files; fi
