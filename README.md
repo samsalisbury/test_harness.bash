@@ -47,12 +47,11 @@ source test_harness.bash
   # in VERBOSE mode, or when a test fails.
   log "Something interesting happened here."
 
-  # Write assertions like this. The first arg is a description of
-  # the fact you are asserting.
-  assert "the thing works" [ "WORKS" = "WORKS" ]
-
   # You can add explicit errors like this:
   error "something bad happened"
+
+  # Ideally, make errors conditional on bad things happening, e.g.:
+  false || error "oh dear"
 
   # Or add an error, and immediately fail the test like this:
   fatal "the world ended"
