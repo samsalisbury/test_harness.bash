@@ -36,6 +36,7 @@ make_test_file() { local NAME="$1" CONTENT="$2"
   make_test_file "the.test" "
   (
     begin_test $TEST_ID
+    true
   )
   "
 
@@ -84,7 +85,7 @@ make_test_file() { local NAME="$1" CONTENT="$2"
   "
 
   if run env VERBOSE=YES ./the.test; then
-    error "bare false did not fail test"
+    error "error did not fail test"
   fi
 )
 
@@ -95,11 +96,11 @@ make_test_file() { local NAME="$1" CONTENT="$2"
   make_test_file "the.test" "
   (
     begin_test $TEST_ID
-    error 'this is an error'
+    fatal 'this is a fatal error'
   )
   "
 
   if run env VERBOSE=YES ./the.test; then
-    fatal "bare false did not fail test"
+    error "fatal did not fail test"
   fi
 )

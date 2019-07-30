@@ -1,0 +1,32 @@
+version: 2.1
+
+executors:
+  default:
+    docker:
+      - image: circleci/buildpack-deps:latest
+    shell: /usr/bin/env bash -euo pipefail -c
+
+jobs:
+  test-singles:
+    executor: default
+    steps:
+      - run: make test-singles
+  test-alls:
+    executor: default
+    steps:
+      - run: make test-alls
+  test:
+    executor: default
+    steps:
+      - run: make test
+
+workflows:
+  all:
+    jobs:
+      - test-singles
+      - test-alls
+      - test:
+          requires:
+            - test-singles
+            - test-alls
+
