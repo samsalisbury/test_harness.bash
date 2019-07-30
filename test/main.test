@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-DEFAULT_TESTHARNESS="$PWD/../test_harness.bash"
-TESTHARNESS="${TESTHARNESS:-$DEFAULT_TESTHARNESS}"
-
 # shellcheck disable=SC1090
-source "$TESTHARNESS"
+source "${TESTHARNESS:-../test_harness.bash}"
 
-add_test_harness() { cp "$TESTHARNESS" ./; }
+# ABS_TESTHARNESS is use from tests in arbitrary work dirs.
+export ABS_TESTHARNESS="$PWD/../test_harness.bash"
+
+add_test_harness() { cp "$ABS_TESTHARNESS" ./; }
 
 make_test_file() { local NAME="$1" CONTENT="$2"
   mkdir -p "$(dirname "$NAME")"
