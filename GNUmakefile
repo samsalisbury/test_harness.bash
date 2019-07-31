@@ -1,5 +1,10 @@
 SHELL := /usr/bin/env bash -euo pipefail -c
 
+.PHONY: clean
+clean:
+	rm -rf $$(find . -type d -name .testdata)
+
+
 .PHONY:  fundamental_test
 fundamental_test:
 	@cd test && ./$@
