@@ -195,13 +195,29 @@ begin_test() {
   cd "$TEST_WORKDIR"
 }
 
-# run runs the command in a subshell and captures the output in the log.
+
+
+# run runs the command in a subshell and captures the combined output in the log.
+# It also exports the stdout, stderr and combined outputs in the variables
+# STDOUT, STDERR and COMBINED respectively, and the exit code in EXIT_CODE.
 run() {
+  local OUTDIR="$TESTDATA/run/${BASH_LINENO[1]}-$1"
+  [ ! -d "$OUTDIR" ] || fatal_noline "More than one 'run' on the same line."
+  mkdir -p "$OUTDIR"
+  _COM="$OUTDIR/combined"; _OUT="$OUTDIR/stdout"; _ERR="$OUTDIR/stderr"
   echo "\$" "$@" >> "$TESTDATA/log"
-  (
-    exec >> "$TESTDATA/log" 2>&1
-    "$@"
-  )
+  # This odd construction ensures that the tee process redirects complete
+  # before the script continues.
+  # See https://unix.stackexchange.com/questions/388519/bash-wait-for-process-in-process-substitution-even-if-command-is-invalid
+  { { "$@" 2> >(tee -a "$_COM" >> "$_ERR") > >(tee -a "$_COM" >> "$_OUT")
+  } 3>&1 >&4 4>&- | cat; } 4>&1
+  EXIT_CODE=$?
+  cat "$_COM" >> "$TESTDATA/log"
+  COMBINED="$(cat "$_COM")"
+  STDOUT="$(cat "$_OUT")"
+  STDERR="$(cat "$_ERR")"
+  export COMBINED STDOUT STDERR EXIT_CODE
+  return "$EXIT_CODE"
 }
 
 run_all_test_files() {
