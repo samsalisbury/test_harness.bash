@@ -65,6 +65,10 @@ echo "=== RUN   fundamental_test/SINGLE"
 if ! diff "$GOT_SINGLE" "$WANT"; then
   echo "--- FAIL: fundamental_test/SINGLE"
   echo "    Diff not empty, see above."
+  echo "    Got:"
+  sed 's/^/    /g' < "$GOT_SINGLE"
+  echo "    Want:"
+  sed 's/^/    /g' < "$WANT"
   FAILED=YES
 else
   echo "--- PASS: fundamental_test/SINGLE"
@@ -74,6 +78,10 @@ echo "=== RUN   fundamental_test/ALL"
 if ! diff "$GOT_ALL" "$WANT"; then
   echo "--- FAIL: fundamental_test/ALL"
   echo "    Diff not empty, see above."
+  echo "    Got:"
+  sed 's/^/    /g' < "$GOT_ALL"
+  echo "    Want:"
+  sed 's/^/    /g' < "$WANT"
   FAILED=YES
 else
   echo "--- PASS: fundamental_test/ALL"
