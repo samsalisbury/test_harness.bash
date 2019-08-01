@@ -97,10 +97,16 @@ make_test_file() { local NAME="$1" CONTENT="$2"
   (
     begin_test $TEST_ID
     fatal 'this is a fatal error'
+    log 'you should never see this'
   )
   "
 
   if run env VERBOSE=YES ./the.test; then
     error "fatal did not fail test"
   fi
+
+  [[ "$STDOUT" = *"this is a fatal error"* ]] || error "fatal error not reported"
+  [[ "$STDOUT" = *"you should never see this"* ]] && error "fatal error did not end test"
+  [[ -z "$STDERR" ]] || error "stderr not empty, contains %s" "$STDERR"
+  [[ "$EXIT_CODE" = 1 ]] || error "got exit code %s; want %s" "$EXIT_CODE" 1
 )
