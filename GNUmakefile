@@ -24,3 +24,9 @@ test-alls: ## Run all tests using test_harness.bash
 
 .PHONY: test
 test: test-singles test-alls ## test relies on all the tests passing individually, and then...
+
+.PHONY: shellcheck
+shellcheck:
+	@find -E . -regex '^.*\.(test|bash)$$' -not -regex '^.*/.testdata/.*$$' | xargs shellcheck
+	@echo "shellcheck ok"
+
