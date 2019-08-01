@@ -1,4 +1,4 @@
-# test_harness.bash
+# test_harness.bash [![CircleCI](https://circleci.com/gh/samsalisbury/test_harness.bash.svg?style=svg)](https://circleci.com/gh/samsalisbury/test_harness.bash)
 
 Simple bash test harness and runner.
 
