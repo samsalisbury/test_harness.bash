@@ -74,7 +74,8 @@ setup_single_test_file() {
 # current indent.
 # Parameters: 1: LEVEL, 2: FORMAT, *: FORMAT_ARGS
 _println() { LEVEL="$1" FMT="$2"; shift 2
-  test "$LEVEL" -gt "$LOG_LEVEL" || printf "%s$FMT\n" "$_indent" "$@"
+  if test "$LEVEL" -gt "$LOG_LEVEL"; then return; fi
+  printf "%s$FMT\n%s" "$_indent" "$*"
 }
 
 # _println_withline is like _println but adds the file and line number.
@@ -144,7 +145,7 @@ _handle_test_error() {
   DEPTH=1
   LINEREF="${BASH_SOURCE[$DEPTH]#./}"
   error_noline "Command failed: $1"
-  _add_fail
+  _add_error
 }
 
 # _handle_test_exit always overrides the exit code to zero so that further tests can run
@@ -186,10 +187,10 @@ begin_test() {
   }
   _add_test; _log "=== RUN   $TEST_ID"
 
+  export _ERRCOUNTER="$TESTDATA/error-count"
+
   trap '_handle_test_error "$BASH_COMMAND"' ERR
   trap _handle_test_exit EXIT
-
-  export _ERRCOUNTER="$TESTDATA/error-count"
   
   TEST_WORKDIR="$TESTDATA/work"
   mkdir -p "$TEST_WORKDIR"
@@ -197,9 +198,7 @@ begin_test() {
   cd "$TEST_WORKDIR"
 }
 
-
-
-# run runs the command in a subshell and captures the combined output in the log.
+# run runs the command supplied and captures the combined output in the log.
 # It also exports the stdout, stderr and combined outputs in the variables
 # STDOUT, STDERR and COMBINED respectively, and the exit code in EXIT_CODE.
 run() {
