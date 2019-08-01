@@ -168,6 +168,8 @@ _handle_test_exit() {
 
 _dump_test_log() { LC_ALL=C sed 's/^/    /g' < "$TESTDATA/log"; }
 
+match() { echo "$1" | grep -E "$2" > /dev/null 2>&1; }
+
 begin_test() {
   # Determine test name and remove any old test data for this test.
   export TEST_NAME="$1"
@@ -178,7 +180,7 @@ begin_test() {
   touch "$TESTDATA/log"
 
   # Apply RUN filtering if any.
-  [ -z "${RUN:-}" ] || match "TEST_ID" "$RUN" || {
+  [ -z "${RUN:-}" ] || match "$TEST_ID" "$RUN" || {
     debug "=== NORUN $TEST_ID: Name does not match RUN='$RUN'"
     exit 0
   }
