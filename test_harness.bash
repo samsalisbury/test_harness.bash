@@ -40,6 +40,21 @@
 
 set -euo pipefail
 
+show_help() {
+NAME="$0"
+FULLNAME="$NAME"
+echo "Usage: $NAME [options] [path]
+Options:
+  -h --help        Show this help.
+  -v               Verbose mode                    (sets VERBOSE=YES)
+  -d               Debug mode                      (sets DEBUG=YES)
+  -run <pattern>   Filter tests by regex <pattern> (sets RUN=<pattern>)
+  -notime          Do not print test durations.    (sets NOTIME=YES)
+
+Made with testing.bash - simple bash test harness inspired by golang."
+
+}
+
 # TEST_PATHS are the paths to test (only relevant when calling this directly).
 TEST_PATHS=
 
