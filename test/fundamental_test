@@ -82,7 +82,7 @@ if ! diff "$GOT_ALL" "$WANT"; then
   echo "    Diff not empty, see above."
   echo "    Got:"
   sed 's/^/    /g' < "$GOT_ALL"
-  echo "    Want:"
+  cho "    Want:"
   sed 's/^/    /g' < "$WANT"
   FAILED=YES
 else
@@ -92,9 +92,9 @@ fi
 [ $FAILED = NO ] || {
   echo "FAIL"
   echo "exit status 1"
-  echo "FAIL    fundamental_test"
+  echo "FAIL      fundamental_test"
   exit 1
 }
 echo "PASS"
-echo "ok      fundamental_test"
+echo "ok        fundamental_test"
 )
