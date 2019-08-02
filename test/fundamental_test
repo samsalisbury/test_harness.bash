@@ -87,5 +87,12 @@ else
   echo "--- PASS: fundamental_test/ALL"
 fi
 
-[ $FAILED = NO ] || exit 1
+[ $FAILED = NO ] || {
+  echo "FAIL"
+  echo "exit status 1"
+  echo "FAIL    fundamental_test"
+  exit 1
+}
+echo "PASS"
+echo "ok      fundamental_test"
 )
