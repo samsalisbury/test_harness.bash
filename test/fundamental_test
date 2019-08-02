@@ -2,6 +2,14 @@
 
 set -euo pipefail
 
+# Use the -update flag to update the expected output from simple.test
+# simple.test.expected is the golden file representing the expected output.
+export UPDATE_EXPECTED=false
+[[ ${1:-} = "-update" ]] && UPDATE_EXPECTED=true
+
+# WANT is a file containing the expected output.
+WANT="$PWD/simple.test.expected"
+
 # This fundamental test does not use test_harness.bash, but rather
 # ensures that the file simple.test produces the correct output.
 #
@@ -20,34 +28,14 @@ cp simple.test "$TEST_WORKDIR/"
 cd "$TEST_WORKDIR"
 GOT_SINGLE="GOT_SINGLE"
 GOT_ALL="GOT_ALL"
-WANT="WANT"
 
 # Write the result of ./simple.test to GOT_SINGLE.
 # Use NOTIME=YES because timer output is unpredicable and we want to check
 # for an exact output.
-TESTHARNESS=test_harness.bash VERBOSE=YES NOTIME=YES ./simple.test > "$GOT_SINGLE"
+VERBOSE=YES NOTIME=YES TESTHARNESS=test_harness.bash ./simple.test > "$GOT_SINGLE"
 
 # Write the result of ./test_harness.bash to GOT_ALL.
 VERBOSE=YES NOTIME=YES ./test_harness.bash > "$GOT_ALL"
-
-# Write the expected output to WANT.
-cat << EOF > "$WANT"
-=== RUN   simple/ok/empty
---- PASS: simple/ok/empty
-=== RUN   simple/ok/true
---- PASS: simple/ok/true
-=== RUN   simple/ok/run-echo
---- PASS: simple/ok/run-echo
-    $ echo 1
-    1
-=== RUN   simple/TestGoLikeTest_Pass
-TestGoLikeTest_Pass
---- PASS: simple/TestGoLikeTest_Pass
-    $ echo OK
-    OK
-PASS
-ok        simple
-EOF
 
 # Let's check our assumptions to be extra safe.
 diff "$WANT" "$WANT" || {
@@ -68,9 +56,32 @@ FAILED=NO
 # If these files are different, then we have failed.
 # Eyeball this failure, sometimes you'll need to update
 # expectations in the WANT file above
-echo "=== RUN   fundamental_test/SINGLE"
+echo "=== RUN   fundamental/single=all"
+if ! diff "$GOT_SINGLE" "$GOT_ALL"; then
+  echo "--- FAIL: fundamental/single=all"
+  echo "    Diff not empty, see above."
+  echo "    Got:"
+  sed 's/^/    /g' < "$GOT_SINGLE"
+  echo "    Want:"
+  sed 's/^/    /g' < "$GOT_ALL"
+  FAILED=YES
+  # If we are trying to update expected, let's at least ensure we got the
+  # same output both times.
+  $UPDATE_EXPECTED && {
+    echo "Failed to update $WANT: all and single had different outputs."
+    exit 1
+  }
+else
+  echo "--- PASS: fundamental/single=all"
+  # OK, we got the same results, we are allowed to update expectations.
+  $UPDATE_EXPECTED && {
+    cp "$GOT_SINGLE" "$WANT"
+  }
+fi
+
+echo "=== RUN   fundamental/single=want"
 if ! diff "$GOT_SINGLE" "$WANT"; then
-  echo "--- FAIL: fundamental_test/SINGLE"
+  echo "--- FAIL: fundamental/single=want"
   echo "    Diff not empty, see above."
   echo "    Got:"
   sed 's/^/    /g' < "$GOT_SINGLE"
@@ -78,28 +89,28 @@ if ! diff "$GOT_SINGLE" "$WANT"; then
   sed 's/^/    /g' < "$WANT"
   FAILED=YES
 else
-  echo "--- PASS: fundamental_test/SINGLE"
+  echo "--- PASS: fundamental/single=want"
 fi
 
-echo "=== RUN   fundamental_test/ALL"
+echo "=== RUN   fundamental/all=want"
 if ! diff "$GOT_ALL" "$WANT"; then
-  echo "--- FAIL: fundamental_test/ALL"
+  echo "--- FAIL: fundamental/ALL"
   echo "    Diff not empty, see above."
   echo "    Got:"
   sed 's/^/    /g' < "$GOT_ALL"
-  cho "    Want:"
+  echo "    Want:"
   sed 's/^/    /g' < "$WANT"
   FAILED=YES
 else
-  echo "--- PASS: fundamental_test/ALL"
+  echo "--- PASS: fundamental/all=want"
 fi
 
 [ $FAILED = NO ] || {
   echo "FAIL"
   echo "exit status 1"
-  echo "FAIL      fundamental_test"
+  echo "FAIL      fundamental"
   exit 1
 }
 echo "PASS"
-echo "ok        fundamental_test"
+echo "ok        fundamental"
 )
