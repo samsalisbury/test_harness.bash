@@ -40,6 +40,11 @@ cat << EOF > "$WANT"
 --- PASS: simple/ok/run-echo
     $ echo 1
     1
+=== RUN   simple/TestGoLikeTest_Pass
+TestGoLikeTest_Pass
+--- PASS: simple/TestGoLikeTest_Pass
+    $ echo OK
+    OK
 PASS
 ok        simple
 EOF

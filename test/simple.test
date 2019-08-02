@@ -22,3 +22,8 @@ source "${TESTHARNESS:-../test_harness.bash}"
   begin_test ok/run-echo
   run echo 1
 )
+
+TestGoLikeTest_Pass() {
+  run echo OK
+}
+

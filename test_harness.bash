@@ -124,11 +124,22 @@ _error_count() { _count_read "$_ERRCOUNTER"; }
 
 _match() { echo "$1" | grep -E "$2" > /dev/null >&1 || return 1; }
 
+_HAS_RUN_TESTS=false
+
 trap _handle_file_exit EXIT
 
 _handle_file_exit() {
   CODE=$?
   $SINGLE_FILE_MODE || exit $CODE
+
+  if ! $_HAS_RUN_TESTS; then
+    _HAS_RUN_TESTS=true
+    if TESTS="$(declare -F | cut -d' ' -f3 | grep -E '^Test')"; then
+      trap _handle_file_exit EXIT
+      # shellcheck disable=SC2086
+      run_tests $TESTS
+    fi
+  fi
 
   FAIL_COUNT="$(_fail_count)"
   [ "$FAIL_COUNT" = 0 ] || {
@@ -139,6 +150,25 @@ _handle_file_exit() {
   _log PASS
   _error "ok        $TEST_FILE_NAME" 
   exit 0
+}
+
+run_tests() {
+  for T in "$@"; do
+  (
+    # Because these tests run during the EXIT trap handler, we cannot define a
+    # new EXIT handler. Therefore, we wrap the test in a function and handle
+    # test exit using the RETURN trap instead.
+    test_wrapper() {
+      begin_test "$T"
+      trap '_handle_test_exit' RETURN
+      # If debug, print the name and location of this test func.
+      [[ $LOG_LEVEL -gt 1 ]] && shopt -s extdebug; declare -F "$T"
+      $T
+    }
+    test_wrapper
+  )
+  done
+  wait
 }
 
 _handle_test_error() {
