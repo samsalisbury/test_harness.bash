@@ -40,9 +40,41 @@
 
 set -euo pipefail
 
+# TEST_PATHS are the paths to test (only relevant when calling this directly).
+TEST_PATHS=
+
+# Flags
+while [ ! $# -eq 0 ]; do
+  case "$1" in
+    -h | --help)
+      show_help; exit
+      ;;
+    -v)
+      export VERBOSE=YES; break
+      ;;
+    -d)
+      export DEBUG=YES; break
+      ;;
+    -notime)
+      export NOTIME=YES; break
+      ;;
+    -run)
+      shift; export RUN="$1"
+      ;;
+    *)
+      TEST_PATHS="$TEST_PATHS $1"
+      ;;
+  esac
+  shift
+done
+
 # SINGLE_FILE_MODE is true when we are sourcing this script in a *.test file.
 SINGLE_FILE_MODE=true
 [ "${BASH_SOURCE[*]}" != "${BASH_SOURCE[0]}" ] || SINGLE_FILE_MODE=false
+
+$SINGLE_FILE_MODE && [ -n "$TEST_PATHS" ] && {
+  echo "Unrecognised args for single file mode: $TEST_PATHS"
+}
 
 # _indent is the current log indent level. It is only ever increased,
 # we use subshells to run tests, so it starts out the same at the beginning
@@ -51,7 +83,7 @@ export _indent=""
 
 export TESTDATA_ROOT="$PWD/.testdata"
 
-export LOG_LEVEL="${LOG_LEVEL:-1}"
+export LOG_LEVEL="${LOG_LEVEL:-0}"
 [ "${QUIET:-}"   != YES ] || LOG_LEVEL=0
 [ "${VERBOSE:-}" != YES ] || LOG_LEVEL=1
 [ "${DEBUG:-}"   != YES ] || LOG_LEVEL=2
