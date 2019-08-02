@@ -42,16 +42,18 @@ set -euo pipefail
 
 show_help() {
 NAME="$0"
-FULLNAME="$NAME"
+MADE_WITH="Made with "
+[[ "$0" = "./testing.bash" ]] && MADE_WITH=""
 echo "Usage: $NAME [options] [path]
 Options:
   -h --help        Show this help.
-  -v               Verbose mode                    (sets VERBOSE=YES)
-  -d               Debug mode                      (sets DEBUG=YES)
-  -run <pattern>   Filter tests by regex <pattern> (sets RUN=<pattern>)
-  -notime          Do not print test durations.    (sets NOTIME=YES)
+  -v               Verbose mode                             (sets VERBOSE=YES)
+  -d               Debug mode                               (sets DEBUG=YES)
+  -run <pattern>   Filter tests by regex <pattern>          (sets RUN=<pattern>)
+  -list            List all tests (after -run filtering)    (sets LIST_ONLY=YES)
+  -notime          Do not print test durations.             (sets NOTIME=YES)
 
-Made with testing.bash - simple bash test harness inspired by golang."
+${MADE_WITH}testing.bash - simple bash test harness inspired by golang"
 
 }
 
@@ -62,23 +64,19 @@ TEST_PATHS=
 while [ ! $# -eq 0 ]; do
   case "$1" in
     -h | --help)
-      show_help; exit
-      ;;
+      show_help; exit ;;
     -v)
-      export VERBOSE=YES; break
-      ;;
+      export VERBOSE=YES ;;
     -d)
-      export DEBUG=YES; break
-      ;;
-    -notime)
-      export NOTIME=YES; break
-      ;;
+      export DEBUG=YES ;;
     -run)
-      shift; export RUN="$1"
-      ;;
+      shift; export RUN="$1" ;;
+    -list)
+      export LIST_ONLY=YES ;;
+    -notime)
+      export NOTIME=YES ;;
     *)
-      TEST_PATHS="$TEST_PATHS $1"
-      ;;
+      TEST_PATHS="$TEST_PATHS $1" ;;
   esac
   shift
 done
@@ -188,6 +186,9 @@ _handle_file_exit() {
     fi
   fi
 
+  # Do not print status in list only mode.
+  [[ "${LIST_ONLY:-}" = YES ]] && exit 0
+
   FAIL_COUNT="$(_fail_count)"
   [ "$FAIL_COUNT" = 0 ] || {
     _error FAIL
@@ -290,9 +291,12 @@ begin_test() {
 
   # Apply RUN filtering if any.
   [ -z "${RUN:-}" ] || match "$TEST_ID" "$RUN" || {
-    debug "=== NORUN $TEST_ID: Name does not match RUN='$RUN'"
+    debug "=== NOT RUNNING $TEST_ID: Name does not match RUN='$RUN'"
     exit 0
   }
+
+  # In LIST_ONLY mode, just print the test ID and exit.
+  [[ "${LIST_ONLY:-}" = YES ]] && { echo "$TEST_ID"; exit 0; }
 
   start_timer "$TESTDATA/start-time"
   _add_test; _log "=== RUN   $TEST_ID"
