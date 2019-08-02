@@ -12,7 +12,8 @@ commands:
       - run:
           shell: /bin/sh
           name: Install Dependencies
-          command: apk add make bash bc
+          command: apk add make bash bc date
+
       - checkout
 
 jobs:
