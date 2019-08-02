@@ -182,8 +182,8 @@ fi
 # the test. It then checks the error count, increments the test fail count if necessary and
 # prints the result.
 _handle_test_exit() {
-  D="$(read_timer "$TESTDATA/start-time")"
   TEST_EXIT_CODE=$?
+  D="$(read_timer "$TESTDATA/start-time")"
   [ $TEST_EXIT_CODE = 0 ] || error_noline "Test body failed with exit code $TEST_EXIT_CODE"
   EC="$(_error_count)"
   [ "$EC" != 0 ] || {
@@ -242,7 +242,6 @@ run() {
   echo "\$" "$@" >> "$TESTDATA/log"
   # This odd construction ensures that the tee process redirects complete
   # before the script continues.
-  # See https://unix.stackexchange.com/questions/388519/bash-wait-for-process-in-process-substitution-even-if-command-is-invalid
   { { "$@" 2> >(tee -a "$_COM" >> "$_ERR") > >(tee -a "$_COM" >> "$_OUT")
   } 3>&1 >&4 4>&- | cat; } 4>&1
   EXIT_CODE=$?
