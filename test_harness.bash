@@ -148,27 +148,33 @@ _handle_test_error() {
   _add_error
 }
 
-export DATE_PROG=date
+if [[ "${NOTIME:-}" != YES ]]; then
 # Sniff out gdate (GNU date as installed by homebrew on Mac), use that if available.
 # GNU date allows microsecond accuracy, so is always preferable.
-command -v gdate > /dev/null 2>&1 && DATE_PROG=gdate
+[ -z "${DATE_PROG:-}" ] && command -v gdate > /dev/null 2>&1 && DATE_PROG="gdate"
+[ -z "${DATE_PROG:-}" ] && DATE_PROG="date"
 # Generate a date using the selected program, so we can check if it supports %N.
 TEST_DATE="$("$DATE_PROG" +%s%N)"
 if [[ ${#TEST_DATE} -gt 13 ]]; then
 now_nano() { $DATE_PROG +%s%N; } # Using high precision timing.
 format_duration() {
-  printf "%.3f\n" "$(bc <<< "scale=3; (($END - $START) / 1000000000)")"
+  printf "(%.3fs)" "$(bc <<< "scale=3; (($END - $START) / 1000000000)")"
 }
 else
 [[ "$(uname)" = Darwin ]] && TIP="Try 'brew install coreutils'."
 echo "WARNING: Please install GNU date for high precision timers. $TIP" 1>&2
 now_nano() { $DATE_PROG +%s000000000; } # Only second precision available.
 format_duration() {
-  printf "%s\n" "$(bc <<< "scale=0; (($END - $START) / 1000000000000)")"
+  printf "(%ss)" "$(bc <<< "scale=0; (($END - $START) / 1000000000000)")"
 }
 fi
 start_timer() { now_nano > "$1"; }
 read_timer() { END=$(now_nano) && START="$(cat "$1")" && format_duration; }
+else
+start_timer() { true; }
+read_timer() { echo; }
+fi
+
 
 # _handle_test_exit always overrides the exit code to zero so that further tests can run
 # in spite of set -e. It first sniffs the exit code, as a non-zero test exit code must fail
@@ -180,12 +186,13 @@ _handle_test_exit() {
   [ $TEST_EXIT_CODE = 0 ] || error_noline "Test body failed with exit code $TEST_EXIT_CODE"
   EC="$(_error_count)"
   [ "$EC" != 0 ] || {
-    _log "--- PASS: $TEST_ID (${D}s)"
+    _log "--- PASS: $TEST_ID ${D}"
     test "$LOG_LEVEL" -eq 0 || _dump_test_log
     exit 0
   }
   _add_fail
-  _error "--- FAIL: $TEST_ID (${D}s)"
+  _error "--- FAIL: $TEST_ID ${D}"
+
   _dump_test_log
   exit 0
 }
