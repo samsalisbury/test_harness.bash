@@ -161,6 +161,7 @@ format_duration() {
   printf " (%.3fs)" "$(bc <<< "scale=3; (($END - $START) / 1000000000)")"
 }
 else
+TIP=""
 [[ "$(uname)" = Darwin ]] && TIP="Try 'brew install coreutils'."
 echo "WARNING: Please install GNU date for high precision timers. $TIP" 1>&2
 now_nano() { $DATE_PROG +%s000000000; } # Only second precision available.
