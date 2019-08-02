@@ -1,0 +1,14 @@
+=== RUN   simple/ok/empty
+--- PASS: simple/ok/empty
+=== RUN   simple/ok/true
+--- PASS: simple/ok/true
+=== RUN   simple/ok/run-echo
+--- PASS: simple/ok/run-echo
+    $ echo 1
+    1
+=== RUN   simple/TestGoLikeTest_Pass
+--- PASS: simple/TestGoLikeTest_Pass
+    $ echo OK
+    OK
+PASS
+ok        simple

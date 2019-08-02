@@ -162,7 +162,7 @@ run_tests() {
       begin_test "$T"
       trap '_handle_test_exit' RETURN
       # If debug, print the name and location of this test func.
-      [[ $LOG_LEVEL -gt 1 ]] && shopt -s extdebug; declare -F "$T"
+      [[ $LOG_LEVEL -gt 1 ]] && { shopt -s extdebug; declare -F "$T"; }
       $T
     }
     test_wrapper
