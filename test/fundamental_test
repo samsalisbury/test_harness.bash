@@ -23,19 +23,21 @@ GOT_ALL="GOT_ALL"
 WANT="WANT"
 
 # Write the result of ./simple.test to GOT_SINGLE.
-TESTHARNESS=test_harness.bash VERBOSE=YES ./simple.test > "$GOT_SINGLE"
+# Use NOTIME=YES because timer output is unpredicable and we want to check
+# for an exact output.
+TESTHARNESS=test_harness.bash VERBOSE=YES NOTIME=YES ./simple.test > "$GOT_SINGLE"
 
 # Write the result of ./test_harness.bash to GOT_ALL.
-VERBOSE=YES ./test_harness.bash > "$GOT_ALL"
+VERBOSE=YES NOTIME=YES ./test_harness.bash > "$GOT_ALL"
 
 # Write the expected output to WANT.
 cat << EOF > "$WANT"
 === RUN   simple/ok/empty
---- PASS: simple/ok/empty (TODO:time)
+--- PASS: simple/ok/empty
 === RUN   simple/ok/true
---- PASS: simple/ok/true (TODO:time)
+--- PASS: simple/ok/true
 === RUN   simple/ok/run-echo
---- PASS: simple/ok/run-echo (TODO:time)
+--- PASS: simple/ok/run-echo
     $ echo 1
     1
 PASS

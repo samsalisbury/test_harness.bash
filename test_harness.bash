@@ -158,21 +158,21 @@ TEST_DATE="$("$DATE_PROG" +%s%N)"
 if [[ ${#TEST_DATE} -gt 13 ]]; then
 now_nano() { $DATE_PROG +%s%N; } # Using high precision timing.
 format_duration() {
-  printf "(%.3fs)" "$(bc <<< "scale=3; (($END - $START) / 1000000000)")"
+  printf " (%.3fs)" "$(bc <<< "scale=3; (($END - $START) / 1000000000)")"
 }
 else
 [[ "$(uname)" = Darwin ]] && TIP="Try 'brew install coreutils'."
 echo "WARNING: Please install GNU date for high precision timers. $TIP" 1>&2
 now_nano() { $DATE_PROG +%s000000000; } # Only second precision available.
 format_duration() {
-  printf "(%ss)" "$(bc <<< "scale=0; (($END - $START) / 1000000000000)")"
+  printf " (%ss)" "$(bc <<< "scale=0; (($END - $START) / 1000000000000)")"
 }
 fi
 start_timer() { now_nano > "$1"; }
 read_timer() { END=$(now_nano) && START="$(cat "$1")" && format_duration; }
 else
 start_timer() { true; }
-read_timer() { echo; }
+read_timer() { true; }
 fi
 
 
@@ -186,12 +186,12 @@ _handle_test_exit() {
   [ $TEST_EXIT_CODE = 0 ] || error_noline "Test body failed with exit code $TEST_EXIT_CODE"
   EC="$(_error_count)"
   [ "$EC" != 0 ] || {
-    _log "--- PASS: $TEST_ID ${D}"
+    _log "--- PASS: $TEST_ID${D}"
     test "$LOG_LEVEL" -eq 0 || _dump_test_log
     exit 0
   }
   _add_fail
-  _error "--- FAIL: $TEST_ID ${D}"
+  _error "--- FAIL: $TEST_ID${D}"
 
   _dump_test_log
   exit 0
