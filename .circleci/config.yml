@@ -3,24 +3,33 @@ version: 2.1
 executors:
   default:
     docker:
-      - image: circleci/buildpack-deps:latest
+      - image: alpine
     shell: /usr/bin/env bash -euo pipefail -c
+
+commands:
+  prep:
+    steps:
+      - run:
+          shell: /bin/sh
+          name: Install Dependencies
+          command: apk add make bash bc
+      - checkout
 
 jobs:
   test-singles:
     executor: default
     steps:
-      - checkout
+      - prep
       - run: make test-singles
   test-alls:
     executor: default
     steps:
-      - checkout
+      - prep
       - run: make test-alls
   test:
     executor: default
     steps:
-      - checkout
+      - prep
       - run: make test
 
 workflows:
