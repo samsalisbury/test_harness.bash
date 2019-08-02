@@ -12,7 +12,7 @@ commands:
       - run:
           shell: /bin/sh
           name: Install Dependencies
-          command: apk add make bash bc date
+          command: apk add make bash bc coreutils
 
       - checkout
 
