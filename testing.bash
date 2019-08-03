@@ -140,12 +140,12 @@ debug() { _println_withline 2 2 "$@" >> "$TESTDATA/log"; }
 # caused by failure or because we are in verbose mode.
 log()   { _println_withline 2 0 "$@" >> "$TESTDATA/log"; }
 error() { _println_withline 2 0 "$@" >> "$TESTDATA/log"; _add_error; }
-fatal() { _println_withline 2 0 "$@" >> "$TESTDATA/log"; _add_error; exit 0; }
+fatal() { _println_withline 2 0 "$@" >> "$TESTDATA/log"; _add_error; exit 1; }
 
 debug_noline() { _println 2 "$@" >> "$TESTDATA/log"; }
 log_noline()   { _println 0 "$@" >> "$TESTDATA/log"; }
 error_noline() { _println 0 "$@" >> "$TESTDATA/log"; _add_error; }
-fatal_noline() { _println 0 "$@" >> "$TESTDATA/log"; _add_error; exit 0; }
+fatal_noline() { _println 0 "$@" >> "$TESTDATA/log"; _add_error; exit 1; }
 
 # Logging functions for internal use (no line numbers, no errors, print direct).
 _debug() { _println 2 "$@"; }
@@ -181,7 +181,11 @@ _handle_file_exit() {
 
   if ! $_HAS_RUN_TESTS; then
     _HAS_RUN_TESTS=true
+    # Get all the functions named Test...
     if TESTS="$(declare -F | cut -d' ' -f3 | grep -E '^Test')"; then
+      # Arrange test by their order in the source code (i.e. sort by line number).
+      # shellcheck disable=SC2086 # We want word-splitting for $TESTS.
+      TESTS="$(shopt -s extdebug && declare -F $TESTS | sort -k2n | cut -d' ' -f1 )"
       trap _handle_file_exit EXIT
       # shellcheck disable=SC2086
       run_tests $TESTS
@@ -213,7 +217,7 @@ run_tests() {
       trap '_handle_test_exit' RETURN
       # If debug, print the name and location of this test func.
       [[ $LOG_LEVEL -gt 1 ]] && { shopt -s extdebug; declare -F "$T"; }
-      $T
+      ( $T; ) || return $?
     }
     test_wrapper
   )
