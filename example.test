@@ -2,18 +2,24 @@
 
 source testing.bash
 
-(
-  begin_test one-plus-one
+TestExample_logs() {
+  log "Hello World! I am a test."
+  log "Usually you won't see any of these logs, unless the test fails."
+  log "You can opt to always see them with the -v flag or by setting VERBOSE=YES"
+  log "Logs are passed through printf, so you can do things like %s!" this
+  log "Logs also print the file and line number they came from."
+  log "Since this test just writes logs, it will succeed, yay!"
+}
 
-  log "not implemented"
-  got=$((1+1)); want=2
-  [ $got = $want ] || error "1+1=$got, want 1+1=$want"
-)
+TestExample_errors() {
+  error "This is an error :("
+  error "The error function is very similar to the log function."
+  error "Except it causes the test to be marked as failed."
+  error "Bad %s!" test
+}
 
-(
-  begin_test TestHelloWorld
+TestExample_fatal() {
+  fatal "This is a fatal error. The test will end right here in a failed state."
+  log "You will not see this line."
+}
 
-  log "not implemented"
-  got=$((1+1)); want=2
-  [ $got = $want ] || error "1+1=$got, want 1+1=$want"
-)
