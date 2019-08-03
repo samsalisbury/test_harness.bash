@@ -1,11 +1,20 @@
-# test_harness.bash [![CircleCI](https://circleci.com/gh/samsalisbury/test_harness.bash.svg?style=svg)](https://circleci.com/gh/samsalisbury/test_harness.bash)
+# testing.bash [![CircleCI](https://circleci.com/gh/samsalisbury/testing.bash.svg?style=svg)](https://circleci.com/gh/samsalisbury/testing.bash)
 
-Simple bash test harness and runner.
+Simple bash test harness and runner with minimal dependencies.
+
+Benefits:
+
+* No installation required.
+* Single file, can be trivially vendored into your project.
+* Minimal dependencies: bash, grep, coreutils(tee, cat date, printf)
+* Works out-of-the-box on Linux and macOS (Windows support not yet tested.)
+* Either run a single test file by direct invocation,
+  or target specific files or directories.
 
 ## What?
 
 A single file to `source` into other bash files, to make writing bash tests easy.
-`test_harness.bash` can also be invoked itself to locate and run all tests defined in a
+`testing.bash` can also be invoked itself to locate and run all tests defined in a
 directory hirarchy.
 
 This project is heavily inspired by `go test` and the golang `testing` package.
@@ -20,13 +29,13 @@ this kind of test.
 
 ## How?
 
-Vendor this into your project by copying the single file `test_harness.bash`,
+Vendor this into your project by copying the single file `testing.bash`,
 then write executable test files like this:
 
 ```bash
 #!/usr/bin/env bash
 
-source test_harness.bash
+source testing.bash
 
 # Each test must be in a subshell, wrapped in parentheses like this:
 (

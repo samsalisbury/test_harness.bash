@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source test_harness.bash
+source testing.bash
 
 (
   begin_test one-plus-one

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC1091
 source ../test_header.bash
 
 # Each test must be in a subshell, wrapped in parentheses like this:

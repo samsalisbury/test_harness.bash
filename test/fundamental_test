@@ -10,18 +10,18 @@ export UPDATE_EXPECTED=false
 # WANT is a file containing the expected output.
 WANT="$PWD/simple.test.expected"
 
-# This fundamental test does not use test_harness.bash, but rather
+# This fundamental test does not use testing.bash, but rather
 # ensures that the file simple.test produces the correct output.
 #
 # Given the truth of this, we can build up further tests using the
-# test_harness.bash script itself.
+# testing.bash script itself.
 
 TESTDATA=".testdata/fundamental"
 rm -rf "$TESTDATA"
 TEST_WORKDIR="$TESTDATA/work"
 mkdir -p "$TEST_WORKDIR"
 
-cp ../test_harness.bash "$TEST_WORKDIR/"
+cp ../testing.bash "$TEST_WORKDIR/"
 cp simple.test "$TEST_WORKDIR/"
 
 (
@@ -32,10 +32,10 @@ GOT_ALL="GOT_ALL"
 # Write the result of ./simple.test to GOT_SINGLE.
 # Use NOTIME=YES because timer output is unpredicable and we want to check
 # for an exact output.
-VERBOSE=YES NOTIME=YES TESTHARNESS=test_harness.bash ./simple.test > "$GOT_SINGLE"
+VERBOSE=YES NOTIME=YES TESTING_BASH=testing.bash ./simple.test > "$GOT_SINGLE"
 
-# Write the result of ./test_harness.bash to GOT_ALL.
-VERBOSE=YES NOTIME=YES ./test_harness.bash > "$GOT_ALL"
+# Write the result of ./testing.bash to GOT_ALL.
+VERBOSE=YES NOTIME=YES ./testing.bash > "$GOT_ALL"
 
 # Let's check our assumptions to be extra safe.
 diff "$WANT" "$WANT" || {

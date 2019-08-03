@@ -19,8 +19,8 @@ $(TESTS): fundamental_test
 test-singles: $(TESTS)
 
 .PHONY: test-alls
-test-alls: ## Run all tests using test_harness.bash
-	@cd test && ../test_harness.bash
+test-alls: ## Run all tests using testing.bash
+	@cd test && ../testing.bash
 
 .PHONY: test
 test: test-singles test-alls ## test relies on all the tests passing individually, and then...

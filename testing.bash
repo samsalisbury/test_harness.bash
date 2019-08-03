@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
-# test_harness.bash is a lightweight bash test harness, similar (ish) to BATS,
+# testing.bash is a lightweight bash test harness, similar (ish) to BATS,
 # except it is a single file, designed to be copied into your repo.
 # Its interface and output are strongly influenced by 'go test' and the golang
 # 'testing' package.
 #
 # To write a test, create an executable file called <filename>.test, which
 # uses a bash shebang line, e.g. '#!/usr/bin/env bash' and then sources this file
-# e.g. 'source test_harness.bash. You can then write tests in the following
+# e.g. 'source testing.bash. You can then write tests in the following
 # format (note each test must be in parentheses to make it a subshell).
 #
 #   #!/usr/bin/env bash
 #
-#   source test_harness.bash
+#   source testing.bash
 #
 #   (
 #     begin_test some-unique-test-name
@@ -35,7 +35,7 @@
 # Executing tests
 #
 # You can directly invoke the test files by calling ./<filename>.test, or
-# invoke ./test_harness.bash to run all test files in the filesystem hierarchy
+# invoke ./testing.bash to run all test files in the filesystem hierarchy
 # rooted in the current directory.
 
 set -euo pipefail
@@ -52,6 +52,8 @@ Options:
   -run <pattern>   Filter tests by regex <pattern>          (sets RUN=<pattern>)
   -list            List all tests (after -run filtering)    (sets LIST_ONLY=YES)
   -notime          Do not print test durations.             (sets NOTIME=YES)
+
+echo BASH_SOURCE=${BASH_SOURCE[*]}
 
 ${MADE_WITH}testing.bash - simple bash test harness inspired by golang"
 
@@ -335,15 +337,15 @@ run() {
 }
 
 run_all_test_files() {
-  export TESTHARNESS="${BASH_SOURCE[0]}"
+  export TESTING_BASH="${BASH_SOURCE[0]}"
   # shellcheck disable=SC2044
   for F in $(find . -mindepth 1 -maxdepth 1 -name '*.test'); do
     [ -x "$F" ] || {
       _log "$F is not executable"
       continue
     }
-    grep -F 'test_harness.bash' "$F" > /dev/null 2>&1 || {
-      _log "$F does not mention test_harness.bash"
+    grep -F 'testing.bash' "$F" > /dev/null 2>&1 || {
+      _log "$F does not mention testing.bash"
       continue
     }
     "$F"
