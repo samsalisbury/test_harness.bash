@@ -6,9 +6,13 @@ source "${TESTING_BASH:-../testing.bash}"
 # ABS_TESTING_BASH is use from tests in arbitrary work dirs.
 export ABS_TESTING_BASH="$PWD/../testing.bash"
 
-add_testing_bash() { cp "$ABS_TESTING_BASH" ./; }
+add_testing_bash() {
+  helper && trap unhelper RETURN
+  cp "$ABS_TESTING_BASH" ./;
+}
 
 make_test_file() { local NAME="$1" CONTENT="$2"
+  helper && trap unhelper RETURN
   mkdir -p "$(dirname "$NAME")"
   printf "#!/usr/bin/env bash\n\nset -euo pipefail\n\n" > "$NAME"
   printf "source testing.bash\n\n" >> "$NAME"
@@ -22,6 +26,7 @@ FLAGS=("-v" "-notime" "-run" ".")
 # that the test file passes in both single and runner mode.
 # Parameters: 1: Test file description; 2: Test file contents.
 assert_tests_pass() {
+  helper && trap unhelper RETURN
   assert_tests_have_same_output pass "$1" "$2"
 }
 
@@ -29,6 +34,7 @@ assert_tests_pass() {
 # that the test file faild in both single and runner mode.
 # Parameters: 1: Test file description; 2: Test file contents.
 assert_tests_fail() {
+  helper && trap unhelper RETURN
   assert_tests_have_same_output fail "$1" "$2"
 }
 
@@ -41,6 +47,7 @@ assert_tests_fail() {
 # not predictable.
 # Parameters: 1: want pass/fail; 2: Test file description; 3: Test file contents.
 assert_tests_have_same_output() { local PASSFAIL="$1" WHAT="$2" BODY="$3"
+  helper && trap unhelper RETURN
   add_testing_bash
   make_test_file "the.test" "$BODY"
   if run ./the.test "${FLAGS[@]}"; then
@@ -75,19 +82,24 @@ assert_tests_have_same_output() { local PASSFAIL="$1" WHAT="$2" BODY="$3"
 }
 
 assert_stdout_contains() {
+  helper && trap unhelper RETURN
   [[ "$STDOUT" = *"$1"* ]] || error "stdout does not contain '$1'"
 }
 assert_stdout_not_contains() {
+  helper && trap unhelper RETURN
   if [[ "$STDOUT" = *"$1"* ]]; then error "stdout contains '$1' but should not"; fi
 }
 assert_stderr_empty() {
+  helper && trap unhelper RETURN
   [[ -z "$STDERR" ]] || error "stderr not empty, contains: '$STDERR'"
 }
 assert_stdout_empty() {
   # TODO: t.Helper so these logs get reported in the right place.
+  helper && trap unhelper RETURN
   [[ -z "$STDOUT" ]] || error "stdout not empty, contains: '$STDOUT'"
 }
 assert_exit_code() {
+  helper && trap unhelper RETURN
   [[ "$EXIT_CODE" = "$1" ]] || error "got exit code %s; want %s" "$EXIT_CODE" "$1"
 }
 

@@ -131,9 +131,18 @@ _println() { LEVEL="$1" FMT="$2"; shift 2
 # _println_withline should not be called from tests, only by logging functions.
 # Parameters: 1: CALL_DEPTH, 2: LEVEL, 3: FORMAT, *: FORMAT_ARGS
 _println_withline() { DEPTH="$1"; LEVEL="$2" FMT="$3"; shift 3
+  [[ -z "${HELPER_DEPTH:-}" ]] || DEPTH=$((DEPTH+HELPER_DEPTH))
   LINEREF="${BASH_SOURCE[$DEPTH]#./}:${BASH_LINENO[$((DEPTH-1))]}"
   _println "$LEVEL" "$LINEREF: $FMT" "$@"
 }
+
+# helper indicates that the function which calls it is a helper, meaning line
+# numbers reported for logs should be those of the calling function.
+helper() { HELPER_DEPTH=$((${HELPER_DEPTH:-0} + 1)); }
+# unhelper must be called after a function calling helper returns, usually
+# the first line of such a test should be:
+#   helper && trap unhelper RETURN
+unhelper() { HELPER_DEPTH=$((HELPER_DEPTH - 1)); }
 
 # Logging functions you can use in your tests.
 debug() { _println_withline 2 2 "$@" >> "$TESTDATA/log"; }
