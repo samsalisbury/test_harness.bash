@@ -16,97 +16,123 @@ make_test_file() { local NAME="$1" CONTENT="$2"
   chmod +x "$NAME"
 }
 
-(
-  begin_test pass/empty
-  
+FLAGS=("-v" "-notime" "-run" ".")
+
+assert_tests_pass() {
+  assert_tests_have_same_output pass "$1" "$2"
+}
+assert_tests_fail() {
+  assert_tests_have_same_output fail "$1" "$2"
+}
+
+
+# Parameters: 1: want pass/fail; 2: Test file description; 3: Test file contents.
+assert_tests_have_same_output() { local PASSFAIL="$1" WHAT="$2" BODY="$3"
   add_testing_bash
-  make_test_file "the.test" "
-  (
-    begin_test $TEST_ID
-  )
-  "
-
-  run env VERBOSE=YES ./the.test || error "empty test failed"
-)
-
-(
-  begin_test pass/true
-  
-  add_testing_bash
-  make_test_file "the.test" "
-  (
-    begin_test $TEST_ID
-    true
-  )
-  "
-
-  run env VERBOSE=YES ./the.test || error "bare true test failed"
-)
-
-(
-  begin_test pass/log
-  
-  add_testing_bash
-  make_test_file "the.test" "
-  (
-    begin_test $TEST_ID
-    log 'Hello %s' World
-  )
-  "
-
-  run env VERBOSE=YES ./the.test || error "log failed test"
-)
-
-(
-  begin_test fail/false
-  
-  add_testing_bash
-  make_test_file "the.test" "
-  (
-    begin_test $TEST_ID
-    false
-  )
-  "
-
-  if run env VERBOSE=YES ./the.test; then
-    error "bare false did not fail test"
+  make_test_file "the.test" "$BODY"
+  if run ./the.test "${FLAGS[@]}"; then
+    [[ "$PASSFAIL" = pass ]] || error "$WHAT failed in single mode"
+  else
+    [[ "$PASSFAIL" = fail ]] || error "$WHAT succeeded when it should have failed in single mode"
   fi
-)
-
-(
-  begin_test fail/error
-  
-  add_testing_bash
-  make_test_file "the.test" "
-  (
-    begin_test $TEST_ID
-    error 'this is an error'
-  )
-  "
-
-  if run env VERBOSE=YES ./the.test; then
-    error "error did not fail test"
+  SINGLE_STDOUT_FILE="$STDOUT_FILE"
+  SINGLE_STDERR_FILE="$STDERR_FILE"
+  SINGLE_EXIT_CODE="$EXIT_CODE"
+  if run ./testing.bash "${FLAGS[@]}"; then
+    [[ "$PASSFAIL" = pass ]] || error "$WHAT failed in runner mode"
+  else
+    [[ "$PASSFAIL" = fail ]] || error "$WHAT succeeded when it should have failed in runner mode"
   fi
-)
-
-(
-  begin_test fail/fatal
+  RUNNER_STDOUT_FILE="$STDOUT_FILE"
+  RUNNER_STDERR_FILE="$STDERR_FILE"
+  RUNNER_EXIT_CODE="$EXIT_CODE"
   
-  add_testing_bash
-  make_test_file "the.test" "
-  (
-    begin_test $TEST_ID
-    fatal 'this is a fatal error'
-    log 'you should never see this'
-  )
-  "
-
-  if run env VERBOSE=YES ./the.test; then
-    error "fatal did not fail test"
+  [[ "$SINGLE_EXIT_CODE" = "$RUNNER_EXIT_CODE" ]] || {
+    error "exit codes different: single:$SINGLE_EXIT_CODE; runner:$RUNNER_EXIT_CODE"
+  }
+  diff "$SINGLE_STDOUT_FILE" "$RUNNER_STDOUT_FILE" || {
+    error "stdout different for single vs runner mode, see diff above"
+  }
+  diff "$SINGLE_STDERR_FILE" "$RUNNER_STDERR_FILE" || {
+    error "stdout different for single vs runner mode, see diff above"
+  }
+  if test_failed; then
+    fatal "differences detected between runner and single mode"
   fi
+}
 
-  [[ "$STDOUT" = *"this is a fatal error"* ]] || error "fatal error not reported"
-  [[ "$STDOUT" = *"you should never see this"* ]] && error "fatal error did not end test"
-  [[ -z "$STDERR" ]] || error "stderr not empty, contains %s" "$STDERR"
-  [[ "$EXIT_CODE" = 1 ]] || error "got exit code %s; want %s" "$EXIT_CODE" 1
-)
+assert_stdout_contains() {
+  [[ "$STDOUT" = *"$1"* ]] || error "stdout does not contain '$1'"
+}
+assert_stdout_not_contains() {
+  if [[ "$STDOUT" = *"$1"* ]]; then error "stdout contains '$1' but should not"; fi
+}
+assert_stderr_empty() {
+  [[ -z "$STDERR" ]] || error "stderr not empty, contains: '$STDERR'"
+}
+assert_stdout_empty() {
+  # TODO: t.Helper so these logs get reported in the right place.
+  [[ -z "$STDOUT" ]] || error "stdout not empty, contains: '$STDOUT'"
+}
+assert_exit_code() {
+  [[ "$EXIT_CODE" = "$1" ]] || error "got exit code %s; want %s" "$EXIT_CODE" "$1"
+}
+
+Test/pass/empty() {
+  assert_tests_pass "one empty test" "
+    TestEmpty() { :; }
+  "
+  assert_stderr_empty
+  assert_exit_code 0
+}
+
+Test/pass/true() {
+  assert_tests_pass "one true test" "
+    TestTrue() { true; }
+  "
+  assert_stderr_empty
+  assert_exit_code 0
+}
+
+Test/pass/log() {
+  assert_tests_pass "one log test" "
+    TestLog() { log 'Hello World'; }
+  "
+  assert_stdout_contains "Hello World"
+  assert_stderr_empty
+  assert_exit_code 0
+}
+
+Test/fail/false() {
+  assert_tests_fail "one false test" "
+    TestFalse() { false; }
+  "
+  assert_stderr_empty
+  assert_exit_code 1
+}
+
+Test/fail/error() {
+  assert_tests_fail "one error test" "
+    TestError() {
+      error 'this is an error'
+      log 'but the test continues and fails'
+    }
+  "
+  assert_stdout_contains "this is an error"
+  assert_stdout_contains "but the test continues and fails"
+  assert_stderr_empty
+  assert_exit_code 1
+}
+
+Test/fail/fatal() {
+  assert_tests_fail "one fatal test" "
+    TestFatal() {
+      fatal 'this is a fatal error';
+      log 'you should never see this'
+    }
+  "
+  assert_stdout_contains "this is a fatal error"
+  assert_stdout_not_contains "you should never see this"
+  assert_stderr_empty
+  assert_exit_code 1
+}
