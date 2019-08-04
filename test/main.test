@@ -128,12 +128,59 @@ Test/pass/log() {
   assert_exit_code 0
 }
 
+Test/pass/logformat() {
+  assert_tests_pass "one formatted log test" "
+    TestLog() { log '%s, cruel %s' Hello World; }
+  "
+  assert_stdout_contains "Hello, cruel World"
+  assert_stderr_empty
+  assert_exit_code 0
+}
+
 Test/fail/false() {
   assert_tests_fail "one false test" "
     TestFalse() { false; }
   "
   assert_stderr_empty
   assert_exit_code 1
+}
+
+Test/fail/exit1_from_test() {
+  assert_tests_fail "exit 1" "
+    TestExit1() { run exit 1; }
+  "
+  assert_stderr_empty
+  assert_exit_code 1
+}
+
+# The exit code of the test does not affect the exit code of running the test file.
+Test/fail/exit2_from_test() {
+  assert_tests_fail "exit 2" "
+    TestExit2() { run exit 2; }
+  "
+  assert_stderr_empty
+  assert_exit_code 1 
+}
+
+# If we exit non-zero before the first test is defined, the exit code is preserved.
+Test/fail/exit2_before_test() {
+  assert_tests_fail "exit 2 before first test" "
+    exit 2
+    TestExit2() { :; }
+  "
+  assert_stderr_empty
+  assert_exit_code 2
+}
+
+# If we exit non-zero after the first test is defined,
+# the exit code reflects the test results, not the file exit.
+Test/fail/exit2_after_test() {
+  assert_tests_fail "exit 2 after first test" "
+    TestExit2() { exit 0; }
+    exit 2
+  "
+  assert_stderr_empty
+  assert_exit_code 2
 }
 
 Test/fail/error() {
@@ -149,6 +196,19 @@ Test/fail/error() {
   assert_exit_code 1
 }
 
+Test/fail/errorformat() {
+  assert_tests_fail "one error test" "
+    TestError() {
+      error 'this is a %s, %s error' formatted terrible
+      log 'but the test continues and fails'
+    }
+  "
+  assert_stdout_contains "this is a formatted, terrible error"
+  assert_stdout_contains "but the test continues and fails"
+  assert_stderr_empty
+  assert_exit_code 1
+}
+
 Test/fail/fatal() {
   assert_tests_fail "one fatal test" "
     TestFatal() {
@@ -157,6 +217,19 @@ Test/fail/fatal() {
     }
   "
   assert_stdout_contains "this is a fatal error"
+  assert_stdout_not_contains "you should never see this"
+  assert_stderr_empty
+  assert_exit_code 1
+}
+
+Test/fail/fatalformat() {
+  assert_tests_fail "one fatal test" "
+    TestFatal() {
+      fatal 'this is a %s %s error' formatted fatal;
+      log 'you should never see this'
+    }
+  "
+  assert_stdout_contains "this is a formatted fatal error"
   assert_stdout_not_contains "you should never see this"
   assert_stderr_empty
   assert_exit_code 1

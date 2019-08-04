@@ -124,7 +124,7 @@ setup_single_test_file() {
 # Parameters: 1: LEVEL, 2: FORMAT, *: FORMAT_ARGS
 _println() { LEVEL="$1" FMT="$2"; shift 2
   if test "$LEVEL" -gt "$LOG_LEVEL"; then return; fi
-  printf "%s$FMT\n%s" "$_indent" "$*"
+  printf "%s$FMT\n" "$_indent" "$@"
 }
 
 # _println_withline is like _println but adds the file and line number.
@@ -190,6 +190,7 @@ trap _handle_file_exit EXIT
 _handle_file_exit() {
   CODE=$?
   $SINGLE_FILE_MODE || exit $CODE
+  [[ $CODE = 0 ]]  || exit $CODE
 
   if ! $_HAS_RUN_TESTS; then
     _HAS_RUN_TESTS=true
