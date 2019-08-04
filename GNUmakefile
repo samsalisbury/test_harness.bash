@@ -13,14 +13,14 @@ fundamental_test:
 TESTS := $(shell cd test && find . -mindepth 1 -maxdepth 1 -type f -name '*.test')
 
 $(TESTS): fundamental_test
-	@cd test && ./$@
+	@cd test && ./$@ -v
 
 .PHONY: test-singles
 test-singles: $(TESTS)
 
 .PHONY: test-alls
 test-alls: ## Run all tests using testing.bash
-	@cd test && ../testing.bash
+	@cd test && ../testing.bash -v
 
 .PHONY: test
 test: test-singles test-alls ## test relies on all the tests passing individually, and then...
