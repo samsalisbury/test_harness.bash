@@ -72,7 +72,9 @@ while [ ! $# -eq 0 ]; do
     -d)
       export DEBUG=YES ;;
     -run)
-      shift; export RUN="$1" ;;
+      shift
+      [[ -n "${1:-}" ]] || { echo '-run flag requires argument'; exit 1; }
+      export RUN="$1" ;;
     -list)
       export LIST_ONLY=YES ;;
     -notime)
@@ -168,6 +170,7 @@ _fail_count() { _count_read "$_FAILCOUNTER"; }
 # _ERRCOUNTER is set by begin_test.
 _add_error() { _count_up "$_ERRCOUNTER"; }
 _error_count() { _count_read "$_ERRCOUNTER"; }
+test_failed() { [[ "$(_error_count)" -ne 0 ]]; }
 
 _match() { echo "$1" | grep -E "$2" > /dev/null >&1 || return 1; }
 
@@ -195,13 +198,22 @@ _handle_file_exit() {
   # Do not print status in list only mode.
   [[ "${LIST_ONLY:-}" = YES ]] && exit 0
 
+  TEST_COUNT="$(_test_count)"
+  if [[ "$TEST_COUNT" = 0 ]]; then
+    _error "ok        $TEST_FILE_NAME [no tests run]"
+    exit $CODE
+  fi
+
+  # Dump test_count in debug mode.k
+  [[ $LOG_LEVEL -gt 1 ]] && { echo "Tests run: $TEST_COUNT"; }
+
   FAIL_COUNT="$(_fail_count)"
   [ "$FAIL_COUNT" = 0 ] || {
     _error FAIL
     _error "fail      $TEST_FILE_NAME" 
     exit 1
   }
-  _log PASS
+  _error PASS
   _error "ok        $TEST_FILE_NAME" 
   exit 0
 }
@@ -337,6 +349,7 @@ run() {
   STDOUT="$(cat "$_OUT")"
   STDERR="$(cat "$_ERR")"
   export COMBINED STDOUT STDERR EXIT_CODE
+  export COMBINED_FILE="$_COM" STDOUT_FILE="$_OUT" STDERR_FILE="$_ERR"
   return "$EXIT_CODE"
 }
 
