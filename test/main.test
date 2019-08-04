@@ -18,14 +18,27 @@ make_test_file() { local NAME="$1" CONTENT="$2"
 
 FLAGS=("-v" "-notime" "-run" ".")
 
+# assert_tests_pass calls assert_tests_have_same_output and additionally asserts
+# that the test file passes in both single and runner mode.
+# Parameters: 1: Test file description; 2: Test file contents.
 assert_tests_pass() {
   assert_tests_have_same_output pass "$1" "$2"
 }
+
+# assert_tests_fail calls assert_tests_have_same_output and additionally asserts
+# that the test file faild in both single and runner mode.
+# Parameters: 1: Test file description; 2: Test file contents.
 assert_tests_fail() {
   assert_tests_have_same_output fail "$1" "$2"
 }
 
-
+# assert_tests_have_same_output creates a directory containing a test file,
+# and a copy of the testing.bash. It then runs the test file both directly,
+# and via ./testing.bash and compares the outputs and exit code. If there are
+# any differences, then they are reported, and the test is failed.
+# Note: we always turn on -v and -notime so we get verbose output without timing
+# info, because timing info would make the comparisons too difficult as they are
+# not predictable.
 # Parameters: 1: want pass/fail; 2: Test file description; 3: Test file contents.
 assert_tests_have_same_output() { local PASSFAIL="$1" WHAT="$2" BODY="$3"
   add_testing_bash
