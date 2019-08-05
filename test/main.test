@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
 # shellcheck disable=SC1090
-source "${TESTING_BASH:-../testing.bash}"
+TESTING_BASH="${TESTING_BASH:-../testing.bash}"
+source "$TESTING_BASH"
 
 # ABS_TESTING_BASH is use from tests in arbitrary work dirs.
-export ABS_TESTING_BASH="$PWD/../testing.bash"
+export ABS_TESTING_BASH="$PWD/$TESTING_BASH"
 
 add_testing_bash() {
   helper && trap unhelper RETURN

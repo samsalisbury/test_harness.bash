@@ -2,46 +2,55 @@
 
 set -euo pipefail
 
-# Use the -update flag to update the expected output from simple.test
-# simple.test.expected is the golden file representing the expected output.
+# Use the -update flag to update the expected output from $FUNDAMENTAL_TEST_FILE
+# $FUNDAMENTAL_TEST_FILE.expected is the golden file representing the expected output.
 export UPDATE_EXPECTED=false
-[[ ${1:-} = "-update" ]] && UPDATE_EXPECTED=true
+export FUNDAMENTAL_TEST_FILE=
+
+# Flags
+while [ ! $# -eq 0 ]; do
+  case "$1" in
+    -update)
+      UPDATE_EXPECTED=true ;;
+    *)
+      FUNDAMENTAL_TEST_FILE="$1"
+  esac
+  shift
+done
+
+[[ -n "$FUNDAMENTAL_TEST_FILE" ]] || FUNDAMENTAL_TEST_FILE=simple.test
 
 # WANT is a file containing the expected output.
-WANT="$PWD/simple.test.expected"
+WANT="$PWD/$FUNDAMENTAL_TEST_FILE.expected"
 
 # This fundamental test does not use testing.bash, but rather
-# ensures that the file simple.test produces the correct output.
+# ensures that the file $FUNDAMENTAL_TEST_FILE produces the correct output.
 #
 # Given the truth of this, we can build up further tests using the
 # testing.bash script itself.
 
-TESTDATA=".testdata/fundamental"
+TESTDATA=".testdata/fundamental/$FUNDAMENTAL_TEST_FILE"
 rm -rf "$TESTDATA"
 TEST_WORKDIR="$TESTDATA/work"
 mkdir -p "$TEST_WORKDIR"
 
 cp ../testing.bash "$TEST_WORKDIR/"
-cp simple.test "$TEST_WORKDIR/"
+cp "$FUNDAMENTAL_TEST_FILE" "$TEST_WORKDIR/"
 
 (
 cd "$TEST_WORKDIR"
 GOT_SINGLE="GOT_SINGLE"
 GOT_ALL="GOT_ALL"
 
-# Write the result of ./simple.test to GOT_SINGLE.
+# Write the result of ./$FUNDAMENTAL_TEST_FILE to GOT_SINGLE.
 # Use NOTIME=YES because timer output is unpredicable and we want to check
 # for an exact output.
-VERBOSE=YES NOTIME=YES TESTING_BASH=testing.bash ./simple.test > "$GOT_SINGLE"
+VERBOSE=YES NOTIME=YES TESTING_BASH=testing.bash ./$FUNDAMENTAL_TEST_FILE 2>&1 | tee "$GOT_SINGLE" | sed "s/^/$FUNDAMENTAL_TEST_FILE (single): /g" > /dev/stdout
 
 # Write the result of ./testing.bash to GOT_ALL.
-VERBOSE=YES NOTIME=YES ./testing.bash > "$GOT_ALL"
+VERBOSE=YES NOTIME=YES ./testing.bash 2>&1 | tee "$GOT_ALL" | sed "s/^/$FUNDAMENTAL_TEST_FILE (runner): /g" > /dev/stdout
 
 # Let's check our assumptions to be extra safe.
-diff "$WANT" "$WANT" || {
-  echo "    diff not behaving as expected! diff $WANT $WANT not empty!"
-  exit 1
-}
 diff "$GOT_SINGLE" "$GOT_SINGLE" || {
   echo "    diff not behaving as expected! diff $GOT_SINGLE $GOT_SINGLE not empty!"
   exit 1
@@ -50,6 +59,12 @@ diff "$GOT_ALL" "$GOT_ALL" || {
   echo "    diff not behaving as expected! diff $GOT_ALL $GOT_ALL not empty!"
   exit 1
 }
+if ! $UPDATE_EXPECTED; then
+diff "$WANT" "$WANT" || {
+  echo "    diff not behaving as expected! diff $WANT $WANT not empty!"
+  exit 1
+}
+fi
 
 FAILED=NO
 

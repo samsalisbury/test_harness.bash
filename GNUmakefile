@@ -7,7 +7,8 @@ clean:
 
 .PHONY:  fundamental_test
 fundamental_test:
-	@cd test && ./$@
+	@cd test && ./$@ simple.test
+	@cd test && ./$@ main.test
 
 # TESTS is each individual test file.
 TESTS := $(shell cd test && find . -mindepth 1 -maxdepth 1 -type f -name '*.test')

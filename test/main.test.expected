@@ -1,0 +1,172 @@
+=== RUN   main/Test/pass/empty
+--- PASS: main/Test/pass/empty
+    $ ./the.test -v -notime -run .
+    === RUN   the/TestEmpty
+    --- PASS: the/TestEmpty
+    PASS
+    ok        the
+    $ ./testing.bash -v -notime -run .
+    === RUN   the/TestEmpty
+    --- PASS: the/TestEmpty
+    PASS
+    ok        the
+=== RUN   main/Test/pass/true
+--- PASS: main/Test/pass/true
+    $ ./the.test -v -notime -run .
+    === RUN   the/TestTrue
+    --- PASS: the/TestTrue
+    PASS
+    ok        the
+    $ ./testing.bash -v -notime -run .
+    === RUN   the/TestTrue
+    --- PASS: the/TestTrue
+    PASS
+    ok        the
+=== RUN   main/Test/pass/log
+--- PASS: main/Test/pass/log
+    $ ./the.test -v -notime -run .
+    === RUN   the/TestLog
+    --- PASS: the/TestLog
+        the.test:8: Hello World
+    PASS
+    ok        the
+    $ ./testing.bash -v -notime -run .
+    === RUN   the/TestLog
+    --- PASS: the/TestLog
+        the.test:8: Hello World
+    PASS
+    ok        the
+=== RUN   main/Test/pass/logformat
+--- PASS: main/Test/pass/logformat
+    $ ./the.test -v -notime -run .
+    === RUN   the/TestLog
+    --- PASS: the/TestLog
+        the.test:8: Hello, cruel World
+    PASS
+    ok        the
+    $ ./testing.bash -v -notime -run .
+    === RUN   the/TestLog
+    --- PASS: the/TestLog
+        the.test:8: Hello, cruel World
+    PASS
+    ok        the
+=== RUN   main/Test/fail/false
+--- PASS: main/Test/fail/false
+    $ ./the.test -v -notime -run .
+    === RUN   the/TestFalse
+    --- FAIL: the/TestFalse
+        Test body failed with exit code 1
+    FAIL
+    fail      the
+    $ ./testing.bash -v -notime -run .
+    === RUN   the/TestFalse
+    --- FAIL: the/TestFalse
+        Test body failed with exit code 1
+    FAIL
+    fail      the
+=== RUN   main/Test/fail/exit1_from_test
+--- PASS: main/Test/fail/exit1_from_test
+    $ ./the.test -v -notime -run .
+    === RUN   the/TestExit1
+    --- FAIL: the/TestExit1
+        $ exit 1
+        Test body failed with exit code 1
+    FAIL
+    fail      the
+    $ ./testing.bash -v -notime -run .
+    === RUN   the/TestExit1
+    --- FAIL: the/TestExit1
+        $ exit 1
+        Test body failed with exit code 1
+    FAIL
+    fail      the
+=== RUN   main/Test/fail/exit2_from_test
+--- PASS: main/Test/fail/exit2_from_test
+    $ ./the.test -v -notime -run .
+    === RUN   the/TestExit2
+    --- FAIL: the/TestExit2
+        $ exit 2
+        Test body failed with exit code 2
+    FAIL
+    fail      the
+    $ ./testing.bash -v -notime -run .
+    === RUN   the/TestExit2
+    --- FAIL: the/TestExit2
+        $ exit 2
+        Test body failed with exit code 2
+    FAIL
+    fail      the
+=== RUN   main/Test/fail/exit2_before_test
+--- PASS: main/Test/fail/exit2_before_test
+    $ ./the.test -v -notime -run .
+    $ ./testing.bash -v -notime -run .
+=== RUN   main/Test/fail/exit2_after_test
+--- PASS: main/Test/fail/exit2_after_test
+    $ ./the.test -v -notime -run .
+    $ ./testing.bash -v -notime -run .
+=== RUN   main/Test/fail/error
+--- PASS: main/Test/fail/error
+    $ ./the.test -v -notime -run .
+    === RUN   the/TestError
+    --- FAIL: the/TestError
+        the.test:9: this is an error
+        the.test:10: but the test continues and fails
+    FAIL
+    fail      the
+    $ ./testing.bash -v -notime -run .
+    === RUN   the/TestError
+    --- FAIL: the/TestError
+        the.test:9: this is an error
+        the.test:10: but the test continues and fails
+    FAIL
+    fail      the
+=== RUN   main/Test/fail/errorformat
+--- PASS: main/Test/fail/errorformat
+    $ ./the.test -v -notime -run .
+    === RUN   the/TestError
+    --- FAIL: the/TestError
+        the.test:9: this is a formatted, terrible error
+        the.test:10: but the test continues and fails
+    FAIL
+    fail      the
+    $ ./testing.bash -v -notime -run .
+    === RUN   the/TestError
+    --- FAIL: the/TestError
+        the.test:9: this is a formatted, terrible error
+        the.test:10: but the test continues and fails
+    FAIL
+    fail      the
+=== RUN   main/Test/fail/fatal
+--- PASS: main/Test/fail/fatal
+    $ ./the.test -v -notime -run .
+    === RUN   the/TestFatal
+    --- FAIL: the/TestFatal
+        the.test:9: this is a fatal error
+        Test body failed with exit code 1
+    FAIL
+    fail      the
+    $ ./testing.bash -v -notime -run .
+    === RUN   the/TestFatal
+    --- FAIL: the/TestFatal
+        the.test:9: this is a fatal error
+        Test body failed with exit code 1
+    FAIL
+    fail      the
+=== RUN   main/Test/fail/fatalformat
+--- PASS: main/Test/fail/fatalformat
+    $ ./the.test -v -notime -run .
+    === RUN   the/TestFatal
+    --- FAIL: the/TestFatal
+        the.test:9: this is a formatted fatal error
+        Test body failed with exit code 1
+    FAIL
+    fail      the
+    $ ./testing.bash -v -notime -run .
+    === RUN   the/TestFatal
+    --- FAIL: the/TestFatal
+        the.test:9: this is a formatted fatal error
+        Test body failed with exit code 1
+    FAIL
+    fail      the
+PASS
+ok        main
