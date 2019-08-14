@@ -4,15 +4,14 @@ on: [push]
 
 jobs:
   test:
-
+    strategy:
+      matrix:
+        bash_version: ["5.0.7", "3.2.57"]
     runs-on: ubuntu-latest
+    container:
+      image: bash:${{ matrix.bash_version }}
     steps:
       - uses: actions/checkout@master
+      - run: bash --version
       - name: Test
         run: make test
-  test-bash-3.2.57:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - uses: docker://bash:3.2.57
-        entrypoint: ["/usr/bash", "-euo", "pipefail", "-c", "make test"]
