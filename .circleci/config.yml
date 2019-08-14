@@ -1,34 +1,52 @@
 version: 2.1
 
 executors:
-  default:
+  bash_5-0-7:
     docker:
-      - image: alpine
+      - image: bash:5.0.7
+    shell: /usr/bin/env bash -euo pipefail -c
+  bash_3-2-57:
+    docker:
+      - image: bash:3.2.57
     shell: /usr/bin/env bash -euo pipefail -c
 
 commands:
   prep:
     steps:
+      - run: bash --version
       - run:
-          shell: /bin/sh
           name: Install Dependencies
-          command: apk add make bash bc coreutils
-
+          command: apk add make bc coreutils
       - checkout
 
 jobs:
-  test-singles:
-    executor: default
+  test-singles-bash5:
+    executor: bash_5-0-7
     steps:
       - prep
       - run: make test-singles
-  test-alls:
-    executor: default
+  test-alls-bash5:
+    executor: bash_5-0-7
     steps:
       - prep
       - run: make test-alls
-  test:
-    executor: default
+  test-bash5:
+    executor: bash_5-0-7
+    steps:
+      - prep
+      - run: make test
+  test-singles-bash3:
+    executor: bash_3-2-57
+    steps:
+      - prep
+      - run: make test-singles
+  test-alls-bash3:
+    executor: bash_3-2-57
+    steps:
+      - prep
+      - run: make test-alls
+  test-bash3:
+    executor: bash_3-2-57
     steps:
       - prep
       - run: make test
@@ -36,10 +54,17 @@ jobs:
 workflows:
   all:
     jobs:
-      - test-singles
-      - test-alls
-      - test:
+      - test-singles-bash3
+      - test-alls-bash3
+      - test-bash3:
           requires:
-            - test-singles
-            - test-alls
+            - test-singles-bash3
+            - test-alls-bash3
+
+      - test-singles-bash5
+      - test-alls-bash5
+      - test-bash5:
+          requires:
+            - test-singles-bash5
+            - test-alls-bash5
 
