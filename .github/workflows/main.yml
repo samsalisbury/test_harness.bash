@@ -15,4 +15,4 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - uses: docker://bash:3.2.57
-        cmd: make test
+        entrypoint: ["/usr/bash", "-euo", "pipefail", "-c", "make test"]
