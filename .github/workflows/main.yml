@@ -10,5 +10,10 @@ jobs:
       - uses: actions/checkout@master
       - name: Test
         run: make test
+  test-bash-3.2.57:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
       - name: Test
+        uses: docker://bash:3.2.57
         run: make test
