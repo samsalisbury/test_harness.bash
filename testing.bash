@@ -126,12 +126,14 @@ _println() { LEVEL="$1" FMT="$2"; shift 2
   if test "$LEVEL" -gt "$LOG_LEVEL"; then return; fi
   printf "%s$FMT\n" "$_indent" "$@"
 }
-
+HELPER_DEPTH=0
 # _println_withline is like _println but adds the file and line number.
 # _println_withline should not be called from tests, only by logging functions.
 # Parameters: 1: CALL_DEPTH, 2: LEVEL, 3: FORMAT, *: FORMAT_ARGS
 _println_withline() { DEPTH="$1"; LEVEL="$2" FMT="$3"; shift 3
-  [[ -z "${HELPER_DEPTH:-}" ]] || DEPTH=$((DEPTH+HELPER_DEPTH))
+  DEPTH=$((DEPTH))
+  HELPER_DEPTH="${HELPER_DEPTH:-0}"
+  DEPTH=$((DEPTH+HELPER_DEPTH))
   LINEREF="${BASH_SOURCE[$DEPTH]#./}:${BASH_LINENO[$((DEPTH-1))]}"
   _println "$LEVEL" "$LINEREF: $FMT" "$@"
 }
@@ -243,7 +245,7 @@ run_tests() {
     test_wrapper() {
       set_test_info "$T"
       [[ $LOG_LEVEL -gt 1 ]] && { shopt -s extdebug; declare -F "$T"; }
-      trap '_handle_test_exit' RETURN
+      trap 'unhelper && _handle_test_exit' RETURN
       # If debug, print the name and location of this test func.
       ( 
       begin_test "$T"
@@ -260,14 +262,11 @@ run_tests() {
 
 _handle_test_error() {
   COMMAND="$1"
-  LINE_NUM="$2"
+  LINE_NUM="${3:-$2}"
   DEPTH=1
   LINEREF="${BASH_SOURCE[$DEPTH]#./}"
   if [ "$LINEREF" = "../testing.bash" ]; then return 0; fi
-  #_error "**r HANDLE ERR: BASH_SOURCE: ${BASH_SOURCE[*]}"
-  #_error "*** HANDLE ERR: LINEREF: $LINEREF"
-  #_error "*** HANDLE ERR: caller: $(caller 0)"
-  error_noline "$LINEREF:$LINE_NUM: Command failed: $COMMAND"
+  error_noline "$LINEREF:$LINE_NUM: Command failed with exit code $4: $COMMAND"
   _add_error
   exit 0
 }
@@ -354,13 +353,16 @@ begin_test() {
   start_timer "$TESTDATA/start-time"
   _add_test; _log "=== RUN   $TEST_ID"
 
+  # Hack to get proper line number for failing commands in old versions of Bash.
+  export CUR_LINE_NO=
+  export PREV_LINE_NO=
   # Simply using this DEBUG trap fixes the BASH_COMMAND var in _handle_test_error below.
   if (( ${BASH_VERSION%%.*} <= 3 )) || [[ ${BASH_VERSION%.*} = 4.0 ]]; then
-    real_lineno=0
-    trap '[[ $FUNCNAME = _handle_test_error ]] || { last_lineno=$real_lineno; real_lineno=$LINENO; }' DEBUG
+    set -o functrace
+    trap 'PREV_LINE_NO=$CUR_LINE_NO; CUR_LINE_NO=$LINENO' DEBUG
   fi
 
-  trap '_handle_test_error "$BASH_COMMAND" "${BASH_LINENO[@]}"' ERR
+  trap '_handle_test_error "$BASH_COMMAND" "${BASH_LINENO}" "$PREV_LINE_NO" "$?"' ERR
   trap _handle_test_exit EXIT
   
   TEST_WORKDIR="$TESTDATA/work"
@@ -373,7 +375,7 @@ begin_test() {
 # It also exports the stdout, stderr and combined outputs in the variables
 # STDOUT, STDERR and COMBINED respectively, and the exit code in EXIT_CODE.
 run() {
-  helper; trap unhelper RETURN
+  helper && trap unhelper RETURN
   local OUTDIR="$TESTDATA/run/${BASH_LINENO[1]}-$1"
   [ ! -d "$OUTDIR" ] || fatal_noline "More than one 'run' on the same line."
   mkdir -p "$OUTDIR"
@@ -394,7 +396,8 @@ run() {
 
 # mustrun is like run except if the command fails, it is a fatal error.
 mustrun() {
-  helper; trap unhelper RETURN
+  set +o functrace
+  helper && trap 'unhelper && set -o functrace' RETURN
   run "$@"
   (( EXIT_CODE == 0 )) || {
     fatal "Command failed with exit code $EXIT_CODE"
