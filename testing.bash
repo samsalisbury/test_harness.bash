@@ -241,23 +241,35 @@ run_tests() {
     # new EXIT handler. Therefore, we wrap the test in a function and handle
     # test exit using the RETURN trap instead.
     test_wrapper() {
-      begin_test "$T"
+      set_test_info "$T"
+      [[ $LOG_LEVEL -gt 1 ]] && { shopt -s extdebug; declare -F "$T"; }
       trap '_handle_test_exit' RETURN
       # If debug, print the name and location of this test func.
-      [[ $LOG_LEVEL -gt 1 ]] && { shopt -s extdebug; declare -F "$T"; }
-      ( $T; ) || return $?
+      ( 
+      begin_test "$T"
+      set -E +e
+      $T
+      )
+      return $?
     }
-    test_wrapper
+    ( test_wrapper; )
   )
   done
   wait
 }
 
 _handle_test_error() {
+  COMMAND="$1"
+  LINE_NUM="$2"
   DEPTH=1
   LINEREF="${BASH_SOURCE[$DEPTH]#./}"
-  error_noline "Command failed: $1"
+  if [ "$LINEREF" = "../testing.bash" ]; then return 0; fi
+  #echo "*** HANDLE ERR: BASH_SOURCE: ${BASH_SOURCE[*]}"
+  #echo "*** HANDLE ERR: LINEREF: $LINEREF"
+  #echo "*** HANDLE ERR: caller: $(caller 0)"
+  error_noline "$LINEREF:$LINE_NUM: Command failed: $COMMAND"
   _add_error
+  exit 0
 }
 
 if [[ "${NOTIME:-}" != YES ]]; then
@@ -342,9 +354,7 @@ begin_test() {
   start_timer "$TESTDATA/start-time"
   _add_test; _log "=== RUN   $TEST_ID"
 
-  export _ERRCOUNTER="$TESTDATA/error-count"
-
-  trap '_handle_test_error "$BASH_COMMAND"' ERR
+  trap '_handle_test_error "$BASH_COMMAND" "${BASH_LINENO:-unknown-line}"' ERR
   trap _handle_test_exit EXIT
   
   TEST_WORKDIR="$TESTDATA/work"
