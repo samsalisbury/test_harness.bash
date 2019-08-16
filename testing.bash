@@ -131,6 +131,10 @@ HELPER_DEPTH=0
 # _println_withline should not be called from tests, only by logging functions.
 # Parameters: 1: CALL_DEPTH, 2: LEVEL, 3: FORMAT, *: FORMAT_ARGS
 _println_withline() { DEPTH="$1"; LEVEL="$2" FMT="$3"; shift 3
+  set +o functrace
+  # For some reason when using helper funcs, we need to add some extra depth.
+  # I would like to understand exactly what is going on here.
+  (( HELPER_DEPTH == 0 )) || DEPTH="$((DEPTH+2))"
   DEPTH=$((DEPTH))
   HELPER_DEPTH="${HELPER_DEPTH:-0}"
   DEPTH=$((DEPTH+HELPER_DEPTH))
@@ -147,14 +151,14 @@ helper() { HELPER_DEPTH=$((${HELPER_DEPTH:-0} + 1)); }
 unhelper() { HELPER_DEPTH=$((HELPER_DEPTH - 1)); }
 
 # Logging functions you can use in your tests.
-debug() { _println_withline 2 2 "$@" >> "$TESTDATA/log"; }
+debug() { _println_withline 2 ${DEPTH:-0} "$@" >> "$TESTDATA/log"; }
 # log uses level 0 because we either print the whole log or none of it at the end.
 # If we are printing the log, then we want all log entries, whether printing was
 # caused by failure or because we are in verbose mode.
-log()   { _println_withline 2 0 "$@" >> "$TESTDATA/log"; }
-error() { _println_withline 2 0 "$@" >> "$TESTDATA/log"; _add_error; }
-fatal() { _println_withline 2 0 "$@" >> "$TESTDATA/log"; _add_error; exit 0; }
-skip() { _println_withline 2 0 "$@" >> "$TESTDATA/log"; _add_skip; exit 0; }
+log()   { _println_withline 2 ${DEPTH:-0} "$@" >> "$TESTDATA/log"; }
+error() { _println_withline 2 ${DEPTH:-0} "$@" >> "$TESTDATA/log"; _add_error; }
+fatal() { _println_withline 2 ${DEPTH:-0} "$@" >> "$TESTDATA/log"; _add_error; exit 0; }
+skip() { _println_withline 2 ${DEPTH:-0} 0 "$@" >> "$TESTDATA/log"; _add_skip; exit 0; }
 
 debug_noline() { _println 2 "$@" >> "$TESTDATA/log"; }
 log_noline()   { _println 0 "$@" >> "$TESTDATA/log"; }
@@ -396,8 +400,7 @@ run() {
 
 # mustrun is like run except if the command fails, it is a fatal error.
 mustrun() {
-  set +o functrace
-  helper && trap 'unhelper && set -o functrace' RETURN
+  helper && trap 'unhelper' RETURN
   run "$@"
   (( EXIT_CODE == 0 )) || {
     fatal "Command failed with exit code $EXIT_CODE"
