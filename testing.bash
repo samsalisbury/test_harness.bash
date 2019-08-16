@@ -373,6 +373,7 @@ begin_test() {
 # It also exports the stdout, stderr and combined outputs in the variables
 # STDOUT, STDERR and COMBINED respectively, and the exit code in EXIT_CODE.
 run() {
+  helper; trap unhelper RETURN
   local OUTDIR="$TESTDATA/run/${BASH_LINENO[1]}-$1"
   [ ! -d "$OUTDIR" ] || fatal_noline "More than one 'run' on the same line."
   mkdir -p "$OUTDIR"
@@ -389,9 +390,15 @@ run() {
   STDERR="$(cat "$_ERR")"
   export COMBINED STDOUT STDERR EXIT_CODE
   export COMBINED_FILE="$_COM" STDOUT_FILE="$_OUT" STDERR_FILE="$_ERR"
-  if [[ "$EXIT_CODE" -ne "0" ]]; then
-    fatal_noline "Exited with code $EXIT_CODE"
-  fi
+}
+
+# mustrun is like run except if the command fails, it is a fatal error.
+mustrun() {
+  helper; trap unhelper RETURN
+  run "$@"
+  (( EXIT_CODE == 0 )) || {
+    fatal "Command failed with exit code $EXIT_CODE"
+  }
 }
 
 run_all_test_files() {
