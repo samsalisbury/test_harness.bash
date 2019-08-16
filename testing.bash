@@ -151,13 +151,13 @@ debug() { _println_withline 2 2 "$@" >> "$TESTDATA/log"; }
 # caused by failure or because we are in verbose mode.
 log()   { _println_withline 2 0 "$@" >> "$TESTDATA/log"; }
 error() { _println_withline 2 0 "$@" >> "$TESTDATA/log"; _add_error; }
-fatal() { _println_withline 2 0 "$@" >> "$TESTDATA/log"; _add_error; exit 1; }
+fatal() { _println_withline 2 0 "$@" >> "$TESTDATA/log"; _add_error; exit 0; }
 skip() { _println_withline 2 0 "$@" >> "$TESTDATA/log"; _add_skip; exit 0; }
 
 debug_noline() { _println 2 "$@" >> "$TESTDATA/log"; }
 log_noline()   { _println 0 "$@" >> "$TESTDATA/log"; }
 error_noline() { _println 0 "$@" >> "$TESTDATA/log"; _add_error; }
-fatal_noline() { _println 0 "$@" >> "$TESTDATA/log"; _add_error; exit 1; }
+fatal_noline() { _println 0 "$@" >> "$TESTDATA/log"; _add_error; exit 0; }
 
 # Logging functions for internal use (no line numbers, no errors, print direct).
 _debug() { _println 2 "$@"; }
