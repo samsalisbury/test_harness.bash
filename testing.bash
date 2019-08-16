@@ -152,6 +152,7 @@ debug() { _println_withline 2 2 "$@" >> "$TESTDATA/log"; }
 log()   { _println_withline 2 0 "$@" >> "$TESTDATA/log"; }
 error() { _println_withline 2 0 "$@" >> "$TESTDATA/log"; _add_error; }
 fatal() { _println_withline 2 0 "$@" >> "$TESTDATA/log"; _add_error; exit 1; }
+skip() { _println_withline 2 0 "$@" >> "$TESTDATA/log"; _add_skip; exit 0; }
 
 debug_noline() { _println 2 "$@" >> "$TESTDATA/log"; }
 log_noline()   { _println 0 "$@" >> "$TESTDATA/log"; }
@@ -180,6 +181,11 @@ _fail_count() { _count_read "$_FAILCOUNTER"; }
 _add_error() { _count_up "$_ERRCOUNTER"; }
 _error_count() { _count_read "$_ERRCOUNTER"; }
 test_failed() { [[ "$(_error_count)" -ne 0 ]]; }
+
+# _SKIPCOUNTER is set by begin_test.
+_add_skip() { _count_up "$_SKIPCOUNTER"; }
+_skip_count() { _count_read "$_SKIPCOUNTER"; }
+test_skipped() { [[ "$(_skip_count)" -ne 0 ]]; }
 
 _match() { echo "$1" | grep -E "$2" > /dev/null >&1 || return 1; }
 
@@ -291,16 +297,17 @@ _handle_test_exit() {
   TEST_EXIT_CODE=$?
   D="$(read_timer "$TESTDATA/start-time")"
   [ $TEST_EXIT_CODE = 0 ] || error_noline "Test body failed with exit code $TEST_EXIT_CODE"
-  EC="$(_error_count)"
-  [ "$EC" != 0 ] || {
+  if test_failed; then
+    _add_fail
+    _error "--- FAIL: $TEST_ID${D}"
+    _dump_test_log
+  elif test_skipped; then
+    _log "--- SKIP: $TEST_ID${D}"
+    test "$LOG_LEVEL" -eq 0 || _dump_test_log
+  else
     _log "--- PASS: $TEST_ID${D}"
     test "$LOG_LEVEL" -eq 0 || _dump_test_log
-    exit 0
-  }
-  _add_fail
-  _error "--- FAIL: $TEST_ID${D}"
-
-  _dump_test_log
+  fi
   exit 0
 }
 
@@ -308,7 +315,7 @@ _dump_test_log() { LC_ALL=C sed 's/^/    /g' < "$TESTDATA/log"; }
 
 match() { echo "$1" | grep -E "$2" > /dev/null 2>&1; }
 
-begin_test() {
+set_test_info() {
   # Determine test name and remove any old test data for this test.
   export TEST_NAME="$1"
   export TEST_ID="$TEST_FILE_NAME/$TEST_NAME"
@@ -316,6 +323,12 @@ begin_test() {
   rm -rf "$TESTDATA"
   mkdir -p "$TESTDATA"
   touch "$TESTDATA/log"
+  export _ERRCOUNTER="$TESTDATA/error-count"
+  export _SKIPCOUNTER="$TESTDATA/skip-count"
+}
+
+begin_test() {
+  set_test_info "$1"
 
   # Apply RUN filtering if any.
   [ -z "${RUN:-}" ] || match "$TEST_ID" "$RUN" || {
