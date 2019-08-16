@@ -264,9 +264,9 @@ _handle_test_error() {
   DEPTH=1
   LINEREF="${BASH_SOURCE[$DEPTH]#./}"
   if [ "$LINEREF" = "../testing.bash" ]; then return 0; fi
-  #echo "*** HANDLE ERR: BASH_SOURCE: ${BASH_SOURCE[*]}"
-  #echo "*** HANDLE ERR: LINEREF: $LINEREF"
-  #echo "*** HANDLE ERR: caller: $(caller 0)"
+  #_error "**r HANDLE ERR: BASH_SOURCE: ${BASH_SOURCE[*]}"
+  #_error "*** HANDLE ERR: LINEREF: $LINEREF"
+  #_error "*** HANDLE ERR: caller: $(caller 0)"
   error_noline "$LINEREF:$LINE_NUM: Command failed: $COMMAND"
   _add_error
   exit 0
@@ -337,10 +337,6 @@ set_test_info() {
   touch "$TESTDATA/log"
   export _ERRCOUNTER="$TESTDATA/error-count"
   export _SKIPCOUNTER="$TESTDATA/skip-count"
-}
-
-begin_test() {
-  set_test_info "$1"
 
   # Apply RUN filtering if any.
   [ -z "${RUN:-}" ] || match "$TEST_ID" "$RUN" || {
@@ -349,12 +345,22 @@ begin_test() {
   }
 
   # In LIST_ONLY mode, just print the test ID and exit.
-  [[ "${LIST_ONLY:-}" = YES ]] && { echo "$TEST_ID"; exit 0; }
+  if [[ "${LIST_ONLY:-}" = YES ]]; then echo "$TEST_ID"; exit 0; fi
+}
+
+begin_test() {
+  set_test_info "$1"
 
   start_timer "$TESTDATA/start-time"
   _add_test; _log "=== RUN   $TEST_ID"
 
-  trap '_handle_test_error "$BASH_COMMAND" "${BASH_LINENO:-unknown-line}"' ERR
+  # Simply using this DEBUG trap fixes the BASH_COMMAND var in _handle_test_error below.
+  if (( ${BASH_VERSION%%.*} <= 3 )) || [[ ${BASH_VERSION%.*} = 4.0 ]]; then
+    real_lineno=0
+    trap '[[ $FUNCNAME = _handle_test_error ]] || { last_lineno=$real_lineno; real_lineno=$LINENO; }' DEBUG
+  fi
+
+  trap '_handle_test_error "$BASH_COMMAND" "${BASH_LINENO[@]}"' ERR
   trap _handle_test_exit EXIT
   
   TEST_WORKDIR="$TESTDATA/work"
