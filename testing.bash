@@ -163,7 +163,7 @@ fatal_noline() { _println 0 "$@" >> "$TESTDATA/log"; _add_error; exit 0; }
 _debug() { _println 2 "$@"; }
 _log()   { _println 1 "$@"; }
 _error() { _println 0 "$@"; }
-_fatal() { _println 0 "$@"; exit 1; }
+_fatal() { _println 0 "$@"; exit 0; }
 
 # Counter functions all use files to maintain counters. This is slow but allows
 # us to count accross different subshells, which is important.
@@ -389,7 +389,9 @@ run() {
   STDERR="$(cat "$_ERR")"
   export COMBINED STDOUT STDERR EXIT_CODE
   export COMBINED_FILE="$_COM" STDOUT_FILE="$_OUT" STDERR_FILE="$_ERR"
-  return "$EXIT_CODE"
+  if [[ "$EXIT_CODE" -ne "0" ]]; then
+    fatal_noline "Exited with code $EXIT_CODE"
+  fi
 }
 
 run_all_test_files() {
