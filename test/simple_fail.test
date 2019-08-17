@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# shellcheck disable=SC1090
+source "${TESTING_BASH:-../testing.bash}"
+
+fatalhelper() {
+  helper
+  fatal "This line number is where fatalhelper was called."
+}
+
+errorhelper() {
+  helper
+  error "This line number is where errorhelper was called."
+}
+
+TestFail_false() {
+  log "You will see this."
+  false
+  log "You won't see this."
+}
+
+TestFail_mustrun_false() {
+  log "You will see this."
+  mustrun false
+  log "You won't see this."
+}
+
+TestFail_error() {
+  log "You will see this."
+  error "some error"
+  log "You will see this."
+}
+
+TestFail_fatal() {
+  log "You will see this."
+  fatal "some fatal error"
+  log "You won't see this."
+}
+
+TestFail_fatalhelper() {
+  log "You will see this."
+  fatalhelper
+  log "You won't see this."
+}
+
+TestFail_errorhelper() {
+  log "You will see this."
+  errorhelper
+  log "You will see this."
+}

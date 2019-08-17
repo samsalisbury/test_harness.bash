@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+
+# These are the fundamental tests. This test file itself is tested specially, ensuring
+# that all tests are run and that we exit with a zero exit code, both when running this
+# by itself, and when running with ./testing.bash.
+
+set -euo pipefail
+
+# shellcheck disable=SC1090
+source "${TESTING_BASH:-../testing.bash}"
+
+TestOK_Empty() {
+  :
+}
+
+TestOK_True() {
+  true
+}
+
+TestOK_Run_True() {
+  run true
+}
+
+TestOK_Run_Echo() {
+  run echo 1
+}
+
+TestOK_skip_empty() {
+  :
+  skip "empty"
+}
+
+TestOK_skip_true() {
+  true
+  skip "true"
+}
+
+TestOK_skip_run_true() {
+  run true
+  skip "run true"
+}
+
+TestOK_skip_run_echo() {
+  run echo 1
+  skip "run echo"
+}
+
+TestOK_log() {
+  log "Hello world."
+}
+
+TestOK_loghelper() {
+  log "You will see this."
+  loghelper
+  log "You will see this."
+}
+
+TestOK_skiphelper() {
+  log "You will see this."
+  skiphelper
+  log "You won't see this."
+}
+
+loghelper() {
+  helper
+  log "This line number is where loghelper was called."
+}
+
+skiphelper() {
+  helper
+  skip "This line number is where skiphelper was called."
+}
