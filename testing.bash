@@ -126,7 +126,7 @@ _println() { LEVEL="$1" FMT="$2"; shift 2
   if test "$LEVEL" -gt "$LOG_LEVEL"; then return; fi
   printf "%s$FMT\n" "$_indent" "$@"
 }
-HELPER_DEPTH=0
+export HELPER_DEPTH=0
 # _println_withline is like _println but adds the file and line number.
 # _println_withline should not be called from tests, only by logging functions.
 # Parameters: 1: CALL_DEPTH, 2: LEVEL, 3: FORMAT, *: FORMAT_ARGS
@@ -134,8 +134,8 @@ _println_withline() { DEPTH="$1"; LEVEL="$2" FMT="$3"; shift 3
   set +o functrace
   # For some reason when using helper funcs, we need to add some extra depth.
   # I would like to understand exactly what is going on here.
-  (( HELPER_DEPTH == 0 )) || DEPTH="$((DEPTH+2))"
-  DEPTH=$((DEPTH))
+  DEPTH=$((DEPTH+2))
+  DEPTH=2
   HELPER_DEPTH="${HELPER_DEPTH:-0}"
   DEPTH=$((DEPTH+HELPER_DEPTH))
   LINEREF="${BASH_SOURCE[$DEPTH]#./}:${BASH_LINENO[$((DEPTH-1))]}"
@@ -144,21 +144,27 @@ _println_withline() { DEPTH="$1"; LEVEL="$2" FMT="$3"; shift 3
 
 # helper indicates that the function which calls it is a helper, meaning line
 # numbers reported for logs should be those of the calling function.
-helper() { HELPER_DEPTH=$((${HELPER_DEPTH:-0} + 1)); }
-# unhelper must be called after a function calling helper returns, usually
-# the first line of such a test should be:
-#   helper && trap unhelper RETURN
-unhelper() { HELPER_DEPTH=$((HELPER_DEPTH - 1)); }
+helper() {
+  (( HELPER_DEPTH+=2 ))
+  trap unhelper RETURN
+}
+unhelper() {
+  (( HELPER_DEPTH != 0 )) || {
+    trap - RETURN # Once we hit a zero helper depth, remove the trap.
+    return
+  }
+  (( HELPER_DEPTH-- ))
+}
 
 # Logging functions you can use in your tests.
-debug() { _println_withline 2 ${DEPTH:-0} "$@" >> "$TESTDATA/log"; }
+debug() { _println_withline ${DEPTH:-0} 2 "$@" >> "$TESTDATA/log"; }
 # log uses level 0 because we either print the whole log or none of it at the end.
 # If we are printing the log, then we want all log entries, whether printing was
 # caused by failure or because we are in verbose mode.
-log()   { _println_withline 2 ${DEPTH:-0} "$@" >> "$TESTDATA/log"; }
-error() { _println_withline 2 ${DEPTH:-0} "$@" >> "$TESTDATA/log"; _add_error; }
-fatal() { _println_withline 2 ${DEPTH:-0} "$@" >> "$TESTDATA/log"; _add_error; exit 0; }
-skip() { _println_withline 2 ${DEPTH:-0} 0 "$@" >> "$TESTDATA/log"; _add_skip; exit 0; }
+log()   { _println_withline ${DEPTH:-0} 0 "$@" >> "$TESTDATA/log"; }
+error() { _println_withline ${DEPTH:-0} 0 "$@" >> "$TESTDATA/log"; _add_error; }
+fatal() { _println_withline ${DEPTH:-0} 0 "$@" >> "$TESTDATA/log"; _add_error; exit 0; }
+skip()  { _println_withline ${DEPTH:-0} 0 "$@" >> "$TESTDATA/log"; _add_skip; exit 0; }
 
 debug_noline() { _println 2 "$@" >> "$TESTDATA/log"; }
 log_noline()   { _println 0 "$@" >> "$TESTDATA/log"; }
@@ -249,7 +255,7 @@ run_tests() {
     test_wrapper() {
       set_test_info "$T"
       [[ $LOG_LEVEL -gt 1 ]] && { shopt -s extdebug; declare -F "$T"; }
-      trap 'unhelper && _handle_test_exit' RETURN
+      trap '_handle_test_exit' RETURN
       # If debug, print the name and location of this test func.
       ( 
       begin_test "$T"
@@ -379,7 +385,6 @@ begin_test() {
 # It also exports the stdout, stderr and combined outputs in the variables
 # STDOUT, STDERR and COMBINED respectively, and the exit code in EXIT_CODE.
 run() {
-  helper && trap unhelper RETURN
   local OUTDIR="$TESTDATA/run/${BASH_LINENO[1]}-$1"
   [ ! -d "$OUTDIR" ] || fatal_noline "More than one 'run' on the same line."
   mkdir -p "$OUTDIR"
@@ -400,9 +405,9 @@ run() {
 
 # mustrun is like run except if the command fails, it is a fatal error.
 mustrun() {
-  helper && trap 'unhelper' RETURN
   run "$@"
   (( EXIT_CODE == 0 )) || {
+    helper && trap 'unhelper' RETURN
     fatal "Command failed with exit code $EXIT_CODE"
   }
 }
