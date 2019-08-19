@@ -1,0 +1,29 @@
+=== RUN   simple_fail/TestFail_false
+--- FAIL: simple_fail/TestFail_false
+    simple_fail.test:19: You will see this.
+    simple_fail.test:20: Command failed with exit code 1: false
+=== RUN   simple_fail/TestFail_mustrun_false
+--- FAIL: simple_fail/TestFail_mustrun_false
+    simple_fail.test:25: You will see this.
+    $ false
+    simple_fail.test:26: Command failed with exit code 1
+=== RUN   simple_fail/TestFail_error
+--- FAIL: simple_fail/TestFail_error
+    simple_fail.test:31: You will see this.
+    simple_fail.test:32: some error
+    simple_fail.test:33: You will see this.
+=== RUN   simple_fail/TestFail_fatal
+--- FAIL: simple_fail/TestFail_fatal
+    simple_fail.test:37: You will see this.
+    simple_fail.test:38: some fatal error
+=== RUN   simple_fail/TestFail_fatalhelper
+--- FAIL: simple_fail/TestFail_fatalhelper
+    simple_fail.test:43: You will see this.
+    simple_fail.test:44: This line number is where fatalhelper was called.
+=== RUN   simple_fail/TestFail_errorhelper
+--- FAIL: simple_fail/TestFail_errorhelper
+    simple_fail.test:49: You will see this.
+    simple_fail.test:50: This line number is where errorhelper was called.
+    simple_fail.test:51: You will see this.
+FAIL
+fail      simple_fail

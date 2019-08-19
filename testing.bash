@@ -38,6 +38,9 @@
 # invoke ./testing.bash to run all test files in the filesystem hierarchy
 # rooted in the current directory.
 
+#if ! ${TESTING_BASH_SOURCED:-false}; then
+export TESTING_BASH_SOURCED=true
+
 set -euo pipefail
 
 show_help() {
@@ -56,11 +59,10 @@ Options:
 echo BASH_SOURCE=${BASH_SOURCE[*]}
 
 ${MADE_WITH}testing.bash - simple bash test harness inspired by golang"
-
 }
 
 # TEST_PATHS are the paths to test (only relevant when calling this directly).
-TEST_PATHS=
+TEST_PATHS=()
 
 # Flags
 while [ ! $# -eq 0 ]; do
@@ -80,7 +82,7 @@ while [ ! $# -eq 0 ]; do
     -notime)
       export NOTIME=YES ;;
     *)
-      TEST_PATHS="$TEST_PATHS $1" ;;
+      TEST_PATHS+=("$1") ;;
   esac
   shift
 done
@@ -89,9 +91,11 @@ done
 SINGLE_FILE_MODE=true
 [ "${BASH_SOURCE[*]}" != "${BASH_SOURCE[0]}" ] || SINGLE_FILE_MODE=false
 
-$SINGLE_FILE_MODE && [ -n "$TEST_PATHS" ] && {
-  echo "Unrecognised args for single file mode: $TEST_PATHS"
+$SINGLE_FILE_MODE && [[ ${#TEST_PATHS} -ne 0 ]] && {
+  echo "Unrecognised args for single file mode: ${TEST_PATHS[*]}"
 }
+
+$SINGLE_FILE_MODE || { [[ ${#TEST_PATHS} -ne 0 ]] || { show_help; exit 1; }; }
 
 # _indent is the current log indent level. It is only ever increased,
 # we use subshells to run tests, so it starts out the same at the beginning
@@ -392,9 +396,10 @@ run() {
   echo "\$" "$@" >> "$TESTDATA/log"
   # This odd construction ensures that the tee process redirects complete
   # before the script continues.
+  set -e +Eo pipefail
   { { "$@" 2> >(tee -a "$_COM" >> "$_ERR") > >(tee -a "$_COM" >> "$_OUT")
   } 3>&1 >&4 4>&- | cat; } 4>&1
-  EXIT_CODE=$?
+  EXIT_CODE="${PIPESTATUS[0]}"
   cat "$_COM" >> "$TESTDATA/log"
   COMBINED="$(cat "$_COM")"
   STDOUT="$(cat "$_OUT")"
@@ -407,15 +412,27 @@ run() {
 mustrun() {
   run "$@"
   (( EXIT_CODE == 0 )) || {
-    helper && trap 'unhelper' RETURN
+    helper
     fatal "Command failed with exit code $EXIT_CODE"
   }
 }
 
+run_test_files() {
+  if [[ "${TEST_PATHS[*]}" = "./..." ]]; then
+    run_all_test_files
+    exit 0
+  fi
+  if [[ ${#TEST_PATHS[@]} -ne 0 ]]; then
+    for F in "${TEST_PATHS[@]}"; do
+      ( cd "$(dirname "$F")" && ./"$(basename "$F")"; )
+    done
+    exit 0
+  fi
+}
+
 run_all_test_files() {
-  export TESTING_BASH="${BASH_SOURCE[0]}"
   # shellcheck disable=SC2044
-  for F in $(find . -mindepth 1 -maxdepth 1 -name '*.test'); do
+  for F in $(find . -mindepth 1 -name '*.test'); do
     [ -x "$F" ] || {
       _log "$F is not executable"
       continue
@@ -428,4 +445,7 @@ run_all_test_files() {
   done
 }
 
-if $SINGLE_FILE_MODE; then setup_single_test_file; else run_all_test_files; fi
+if $SINGLE_FILE_MODE; then setup_single_test_file; else run_test_files; fi
+
+#fi
+

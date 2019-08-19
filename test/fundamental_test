@@ -11,9 +11,9 @@ export FUNDAMENTAL_TEST_FILE=
 while [ ! $# -eq 0 ]; do
   case "$1" in
     -update)
-      UPDATE_EXPECTED=true ;;
+      export UPDATE_EXPECTED=true ;;
     *)
-      FUNDAMENTAL_TEST_FILE="$1"
+      export FUNDAMENTAL_TEST_FILE="$1"
   esac
   shift
 done
@@ -21,7 +21,7 @@ done
 [[ -n "$FUNDAMENTAL_TEST_FILE" ]] || FUNDAMENTAL_TEST_FILE=simple.test
 
 # WANT is a file containing the expected output.
-WANT="$PWD/$FUNDAMENTAL_TEST_FILE.expected"
+export WANT="$PWD/$FUNDAMENTAL_TEST_FILE.expected"
 
 # This fundamental test does not use testing.bash, but rather
 # ensures that the file $FUNDAMENTAL_TEST_FILE produces the correct output.
@@ -29,9 +29,9 @@ WANT="$PWD/$FUNDAMENTAL_TEST_FILE.expected"
 # Given the truth of this, we can build up further tests using the
 # testing.bash script itself.
 
-TESTDATA=".testdata/fundamental/$FUNDAMENTAL_TEST_FILE"
+export TESTDATA=".testdata/fundamental/$FUNDAMENTAL_TEST_FILE"
 rm -rf "$TESTDATA"
-TEST_WORKDIR="$TESTDATA/work"
+export TEST_WORKDIR="$TESTDATA/work"
 mkdir -p "$TEST_WORKDIR"
 
 cp ../testing.bash "$TEST_WORKDIR/"
@@ -39,16 +39,24 @@ cp "$FUNDAMENTAL_TEST_FILE" "$TEST_WORKDIR/"
 
 (
 cd "$TEST_WORKDIR"
-GOT_SINGLE="GOT_SINGLE"
-GOT_ALL="GOT_ALL"
+export GOT_SINGLE="GOT_SINGLE"
+export GOT_ALL="GOT_ALL"
 
 # Write the result of ./$FUNDAMENTAL_TEST_FILE to GOT_SINGLE.
 # Use NOTIME=YES because timer output is unpredicable and we want to check
 # for an exact output.
-VERBOSE=YES NOTIME=YES TESTING_BASH=testing.bash ./$FUNDAMENTAL_TEST_FILE 2>&1 | tee "$GOT_SINGLE" | sed "s/^/$FUNDAMENTAL_TEST_FILE (single): /g" > /dev/stdout
+(
+  # shellcheck disable=SC2030 disable=SC2031
+  export VERBOSE=YES NOTIME=YES TESTING_BASH=testing.bash
+  "./$FUNDAMENTAL_TEST_FILE" 2>&1 | tee "$GOT_SINGLE" | sed "s/^/$FUNDAMENTAL_TEST_FILE (single): /g" > /dev/stdout
+) || true
 
 # Write the result of ./testing.bash to GOT_ALL.
-VERBOSE=YES NOTIME=YES ./testing.bash 2>&1 | tee "$GOT_ALL" | sed "s/^/$FUNDAMENTAL_TEST_FILE (runner): /g" > /dev/stdout
+(
+  # shellcheck disable=SC2030 disable=SC2031
+  export VERBOSE=YES NOTIME=YES TESTING_BASH=testing.bash
+  ./testing.bash "$FUNDAMENTAL_TEST_FILE" 2>&1 | tee "$GOT_ALL" | sed "s/^/$FUNDAMENTAL_TEST_FILE (runner): /g" > /dev/stdout
+) || true
 
 # Let's check our assumptions to be extra safe.
 diff "$GOT_SINGLE" "$GOT_SINGLE" || {

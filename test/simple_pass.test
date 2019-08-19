@@ -52,6 +52,7 @@ TestOK_log() {
 TestOK_loghelper() {
   log "You will see this."
   loghelper
+  nested_loghelper
   log "You will see this."
 }
 
@@ -59,6 +60,13 @@ TestOK_skiphelper() {
   log "You will see this."
   skiphelper
   log "You won't see this."
+}
+
+nested_loghelper() {
+  helper
+  log "Logs from nested helpers appear to come from the same line."
+  log "See, this line and the next from a nested helper are all the same."
+  loghelper
 }
 
 loghelper() {
