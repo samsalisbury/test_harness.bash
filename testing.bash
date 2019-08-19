@@ -396,10 +396,14 @@ run() {
   echo "\$" "$@" >> "$TESTDATA/log"
   # This odd construction ensures that the tee process redirects complete
   # before the script continues.
+  EXIT_CODE=0
   set -e +Eo pipefail
   { { "$@" 2> >(tee -a "$_COM" >> "$_ERR") > >(tee -a "$_COM" >> "$_OUT")
   } 3>&1 >&4 4>&- | cat; } 4>&1
-  EXIT_CODE="${PIPESTATUS[0]}"
+  #EXIT_CODE=${PIPESTATUS[0]}
+  for EC in $? "${PIPESTATUS[@]}"; do
+    if [[ $EC != "0" ]]; then EXIT_CODE=$EC; fi
+  done
   cat "$_COM" >> "$TESTDATA/log"
   COMBINED="$(cat "$_COM")"
   STDOUT="$(cat "$_OUT")"
