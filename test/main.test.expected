@@ -5,7 +5,7 @@
     --- PASS: the/TestEmpty
     PASS
     ok        the
-    $ ./testing.bash -v -notime -run .
+    $ ./testing.bash -v -notime -run . ./...
     === RUN   the/TestEmpty
     --- PASS: the/TestEmpty
     PASS
@@ -17,7 +17,7 @@
     --- PASS: the/TestTrue
     PASS
     ok        the
-    $ ./testing.bash -v -notime -run .
+    $ ./testing.bash -v -notime -run . ./...
     === RUN   the/TestTrue
     --- PASS: the/TestTrue
     PASS
@@ -30,7 +30,7 @@
         the.test:8: Hello World
     PASS
     ok        the
-    $ ./testing.bash -v -notime -run .
+    $ ./testing.bash -v -notime -run . ./...
     === RUN   the/TestLog
     --- PASS: the/TestLog
         the.test:8: Hello World
@@ -44,7 +44,7 @@
         the.test:8: Hello, cruel World
     PASS
     ok        the
-    $ ./testing.bash -v -notime -run .
+    $ ./testing.bash -v -notime -run . ./...
     === RUN   the/TestLog
     --- PASS: the/TestLog
         the.test:8: Hello, cruel World
@@ -55,55 +55,35 @@
     $ ./the.test -v -notime -run .
     === RUN   the/TestFalse
     --- FAIL: the/TestFalse
-        Test body failed with exit code 1
+        the.test:8: Command failed with exit code 1: false
     FAIL
     fail      the
-    $ ./testing.bash -v -notime -run .
+    $ ./testing.bash -v -notime -run . ./...
     === RUN   the/TestFalse
     --- FAIL: the/TestFalse
-        Test body failed with exit code 1
+        the.test:8: Command failed with exit code 1: false
     FAIL
     fail      the
 === RUN   main/Test/fail/exit1_from_test
 --- PASS: main/Test/fail/exit1_from_test
     $ ./the.test -v -notime -run .
     === RUN   the/TestExit1
-    --- FAIL: the/TestExit1
-        $ exit 1
-        Test body failed with exit code 1
-    FAIL
-    fail      the
-    $ ./testing.bash -v -notime -run .
+    $ ./testing.bash -v -notime -run . ./...
     === RUN   the/TestExit1
-    --- FAIL: the/TestExit1
-        $ exit 1
-        Test body failed with exit code 1
-    FAIL
-    fail      the
 === RUN   main/Test/fail/exit2_from_test
 --- PASS: main/Test/fail/exit2_from_test
     $ ./the.test -v -notime -run .
     === RUN   the/TestExit2
-    --- FAIL: the/TestExit2
-        $ exit 2
-        Test body failed with exit code 2
-    FAIL
-    fail      the
-    $ ./testing.bash -v -notime -run .
+    $ ./testing.bash -v -notime -run . ./...
     === RUN   the/TestExit2
-    --- FAIL: the/TestExit2
-        $ exit 2
-        Test body failed with exit code 2
-    FAIL
-    fail      the
 === RUN   main/Test/fail/exit2_before_test
 --- PASS: main/Test/fail/exit2_before_test
     $ ./the.test -v -notime -run .
-    $ ./testing.bash -v -notime -run .
+    $ ./testing.bash -v -notime -run . ./...
 === RUN   main/Test/fail/exit2_after_test
 --- PASS: main/Test/fail/exit2_after_test
     $ ./the.test -v -notime -run .
-    $ ./testing.bash -v -notime -run .
+    $ ./testing.bash -v -notime -run . ./...
 === RUN   main/Test/fail/error
 --- PASS: main/Test/fail/error
     $ ./the.test -v -notime -run .
@@ -113,7 +93,7 @@
         the.test:10: but the test continues and fails
     FAIL
     fail      the
-    $ ./testing.bash -v -notime -run .
+    $ ./testing.bash -v -notime -run . ./...
     === RUN   the/TestError
     --- FAIL: the/TestError
         the.test:9: this is an error
@@ -129,7 +109,7 @@
         the.test:10: but the test continues and fails
     FAIL
     fail      the
-    $ ./testing.bash -v -notime -run .
+    $ ./testing.bash -v -notime -run . ./...
     === RUN   the/TestError
     --- FAIL: the/TestError
         the.test:9: this is a formatted, terrible error
@@ -142,14 +122,12 @@
     === RUN   the/TestFatal
     --- FAIL: the/TestFatal
         the.test:9: this is a fatal error
-        Test body failed with exit code 1
     FAIL
     fail      the
-    $ ./testing.bash -v -notime -run .
+    $ ./testing.bash -v -notime -run . ./...
     === RUN   the/TestFatal
     --- FAIL: the/TestFatal
         the.test:9: this is a fatal error
-        Test body failed with exit code 1
     FAIL
     fail      the
 === RUN   main/Test/fail/fatalformat
@@ -158,14 +136,12 @@
     === RUN   the/TestFatal
     --- FAIL: the/TestFatal
         the.test:9: this is a formatted fatal error
-        Test body failed with exit code 1
     FAIL
     fail      the
-    $ ./testing.bash -v -notime -run .
+    $ ./testing.bash -v -notime -run . ./...
     === RUN   the/TestFatal
     --- FAIL: the/TestFatal
         the.test:9: this is a formatted fatal error
-        Test body failed with exit code 1
     FAIL
     fail      the
 PASS
