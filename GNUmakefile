@@ -9,8 +9,8 @@ fundamental_test:
 	@cd test && ./$@ simple_fail.test
 	@cd test && ./$@ main.test
 
-TESTS_SHOULDPASS := $(shell cd test && find -E . -mindepth 1 -maxdepth 1 -type f -name '*.test' -not -name '*_fail.test')
-TESTS_SHOULDFAIL := $(shell cd test && find -E . -mindepth 1 -maxdepth 1 -type f -name '*_fail.test')
+TESTS_SHOULDPASS := $(shell cd test && find . -mindepth 1 -maxdepth 1 -type f -name '*.test' -not -name '*_fail.test')
+TESTS_SHOULDFAIL := $(shell cd test && find . -mindepth 1 -maxdepth 1 -type f -name '*_fail.test')
 
 $(info TESTS_SHOULDPASS=$(TESTS_SHOULDPASS))
 $(info TESTS_SHOULDFAIL=$(TESTS_SHOULDFAIL))
