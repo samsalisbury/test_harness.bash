@@ -4,27 +4,61 @@ SHELL := /usr/bin/env bash -euo pipefail -c
 clean:
 	rm -rf $$(find . -type d -name .testdata)
 
-
-.PHONY:  fundamental_test
 fundamental_test:
-	@cd test && ./$@ simple.test
+	@cd test && ./$@ simple_pass.test
+	@cd test && ./$@ simple_fail.test
 	@cd test && ./$@ main.test
 
-# TESTS is each individual test file.
-TESTS := $(shell cd test && find . -mindepth 1 -maxdepth 1 -type f -name '*.test')
+TESTS_SHOULDPASS := $(shell cd test && find -E . -mindepth 1 -maxdepth 1 -type f -name '*.test' -not -name '*_fail.test')
+TESTS_SHOULDFAIL := $(shell cd test && find -E . -mindepth 1 -maxdepth 1 -type f -name '*_fail.test')
 
-$(TESTS): fundamental_test
-	@cd test && ./$@ -v
+$(info TESTS_SHOULDPASS=$(TESTS_SHOULDPASS))
+$(info TESTS_SHOULDFAIL=$(TESTS_SHOULDFAIL))
+#$(error exiting)
+
+$(TESTS_SHOULDPASS):
+	@cd test && if ! (./$@ -v | sed -E 's/^/make $@: /g'); then \
+		echo "ERROR: $@ should have passed."; exit 1; \
+	fi
+
+$(TESTS_SHOULDFAIL):
+	@cd test && if (./$@ -v | sed -E 's/^/make $@: /g'); then \
+		echo "ERROR: $@ should have failed."; exit 1; \
+	fi
+
+.PHONY: test-singles-shouldpass
+test-singles-shouldpass: $(TESTS_SHOULDPASS)
+	@echo "All passing singles passed appropriately."
+
+.PHONY: test-singles-shouldfail
+test-singles-shouldfail: $(TESTS_SHOULDFAIL)
+	@echo "All failing singles failed appropriately."
 
 .PHONY: test-singles
-test-singles: $(TESTS)
+test-singles: test-singles-shouldpass test-singles-shouldfail
+	@echo "All single test failes passed and failed appropriately."
+
+.PHONY: test-alls-shouldpass
+test-alls-shouldpass:
+	@cd test && if ! (../testing.bash -v $(TESTS_SHOULDPASS) | sed -E 's/^/make $@: /g'); then \
+		echo "should have passed"; exit 1; \
+	fi
+	@echo "Running all passing tests passed appropriately."
+
+.PHONY: test-alls-shouldfail
+test-alls-shouldfail:
+	@cd test && if (../testing.bash -v $(TESTS_SHOULDFAIL) | sed -E 's/^/make $@: /g'); then \
+		echo "should have failed"; exit 1; \
+	fi
+	@echo "Running all failing tests failed appropriately."
 
 .PHONY: test-alls
-test-alls: ## Run all tests using testing.bash
-	@cd test && ../testing.bash -v
+test-alls: test-alls-shouldpass test-alls-shouldfail
+	@echo "Running all tests via testing.bash passed and failed appropriately."
 
 .PHONY: test
-test: test-singles test-alls ## test relies on all the tests passing individually, and then...
+test: fundamental_test test-singles test-alls ## test relies on all the tests passing individually, and then...
+	@echo "All tests passed and failed appropriately."
 
 .PHONY: shellcheck
 shellcheck:
