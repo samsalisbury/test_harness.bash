@@ -70,12 +70,6 @@
     === RUN   the/TestExit1
     $ ./testing.bash -v -notime -run . ./...
     === RUN   the/TestExit1
-=== RUN   main/Test/fail/exit2_from_test
---- PASS: main/Test/fail/exit2_from_test
-    $ ./the.test -v -notime -run .
-    === RUN   the/TestExit2
-    $ ./testing.bash -v -notime -run . ./...
-    === RUN   the/TestExit2
 === RUN   main/Test/fail/exit2_before_test
 --- PASS: main/Test/fail/exit2_before_test
     $ ./the.test -v -notime -run .
