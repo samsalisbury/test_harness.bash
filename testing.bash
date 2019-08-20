@@ -91,7 +91,7 @@ done
 SINGLE_FILE_MODE=true
 [ "${BASH_SOURCE[*]}" != "${BASH_SOURCE[0]}" ] || SINGLE_FILE_MODE=false
 
-$SINGLE_FILE_MODE && [[ ${#TEST_PATHS} -ne 0 ]] && {
+$SINGLE_FILE_MODE && [[ "${TEST_PATHS:-}" != "" ]] && {
   echo "Unrecognised args for single file mode: ${TEST_PATHS[*]}"
 }
 

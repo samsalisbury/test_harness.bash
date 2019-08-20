@@ -157,15 +157,6 @@ Test/fail/exit1_from_test() {
   assert_exit_code 1
 }
 
-# The exit code of the test does not affect the exit code of running the test file.
-Test/fail/exit2_from_test() {
-  assert_tests_fail "exit 2" "
-    TestExit2() { exit 2; }
-  "
-  assert_stderr_empty
-  assert_exit_code 2
-}
-
 # If we exit non-zero before the first test is defined, the exit code is preserved.
 Test/fail/exit2_before_test() {
   assert_tests_fail "exit 2 before first test" "
