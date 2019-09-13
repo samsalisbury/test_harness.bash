@@ -48,7 +48,7 @@ test-alls-shouldpass:
 .PHONY: test-alls-shouldfail
 test-alls-shouldfail:
 	@cd test && if (set -euo pipefail && ../testing.bash -v $(TESTS_SHOULDFAIL) | sed -E 's/^/make $@: /g'); then \
-		echo "Running all failing tests should have failed"; exit 1; \
+		echo "Running all failing tests should have failed. Got PIPESTATUS='${PIPESTATUS[*]}'"; exit 1; \
 	fi
 	@echo "Running all failing tests failed appropriately."
 
