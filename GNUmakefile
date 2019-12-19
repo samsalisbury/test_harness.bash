@@ -40,14 +40,14 @@ test-singles: test-singles-shouldpass test-singles-shouldfail
 
 .PHONY: test-alls-shouldpass
 test-alls-shouldpass:
-	@cd test && if ! (../testing.bash -v $(TESTS_SHOULDPASS) | sed -E 's/^/make $@: /g'); then \
-		echo "should have passed"; exit 1; \
-	fi
+	@cd test && if ! (../testing.bash -v $(TESTS_SHOULDPASS)); then \
+		echo "Running all passing tests should have passed."; exit 1; \
+	fi | sed -E 's/^/make $@: /g'
 	@echo "Running all passing tests passed appropriately."
 
 .PHONY: test-alls-shouldfail
 test-alls-shouldfail:
-	@cd test && if ../testing.bash -v $(TESTS_SHOULDFAIL); then \
+	@cd test && if (../testing.bash -v $(TESTS_SHOULDFAIL)); then \
 		echo "Running all failing tests should have failed."; exit 1; \
 	fi | sed -E 's/^/make $@: /g'
 	@echo "Running all failing tests failed appropriately."
