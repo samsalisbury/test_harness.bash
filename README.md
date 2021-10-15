@@ -37,12 +37,7 @@ then write executable test files like this:
 
 source testing.bash
 
-# Each test must be in a subshell, wrapped in parentheses like this:
-(
-  # The first line of your test should be 'begin_test <test-name>'
-  # Within a given test file, the <test-name> must be unique.
-  begin_test some-test-name
-
+TestReadmeExample() {
   # Write arbitrary bash. You are in a new, empty working directory
   # so you can freely create new files etc as part of your tests.
 
