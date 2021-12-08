@@ -1,21 +1,35 @@
 === RUN   simple_pass/TestOK_Empty
 --- PASS: simple_pass/TestOK_Empty
+--- PASS: simple_pass/TestOK_Empty
 === RUN   simple_pass/TestOK_True
 --- PASS: simple_pass/TestOK_True
+--- PASS: simple_pass/TestOK_True
 === RUN   simple_pass/TestOK_Run_True
+--- PASS: simple_pass/TestOK_Run_True
+    $ true
 --- PASS: simple_pass/TestOK_Run_True
     $ true
 === RUN   simple_pass/TestOK_Run_Echo
 --- PASS: simple_pass/TestOK_Run_Echo
     $ echo 1
     1
+--- PASS: simple_pass/TestOK_Run_Echo
+    $ echo 1
+    1
 === RUN   simple_pass/TestOK_skip_empty
+--- SKIP: simple_pass/TestOK_skip_empty
+    simple_pass.test:30: empty
 --- SKIP: simple_pass/TestOK_skip_empty
     simple_pass.test:30: empty
 === RUN   simple_pass/TestOK_skip_true
 --- SKIP: simple_pass/TestOK_skip_true
     simple_pass.test:35: true
+--- SKIP: simple_pass/TestOK_skip_true
+    simple_pass.test:35: true
 === RUN   simple_pass/TestOK_skip_run_true
+--- SKIP: simple_pass/TestOK_skip_run_true
+    $ true
+    simple_pass.test:40: run true
 --- SKIP: simple_pass/TestOK_skip_run_true
     $ true
     simple_pass.test:40: run true
@@ -24,7 +38,13 @@
     $ echo 1
     1
     simple_pass.test:45: run echo
+--- SKIP: simple_pass/TestOK_skip_run_echo
+    $ echo 1
+    1
+    simple_pass.test:45: run echo
 === RUN   simple_pass/TestOK_log
+--- PASS: simple_pass/TestOK_log
+    simple_pass.test:49: Hello world.
 --- PASS: simple_pass/TestOK_log
     simple_pass.test:49: Hello world.
 === RUN   simple_pass/TestOK_loghelper
@@ -35,7 +55,17 @@
     simple_pass.test:55: See, this line and the next from a nested helper are all the same.
     simple_pass.test:55: This line number is where loghelper was called.
     simple_pass.test:56: You will see this.
+--- PASS: simple_pass/TestOK_loghelper
+    simple_pass.test:53: You will see this.
+    simple_pass.test:54: This line number is where loghelper was called.
+    simple_pass.test:55: Logs from nested helpers appear to come from the same line.
+    simple_pass.test:55: See, this line and the next from a nested helper are all the same.
+    simple_pass.test:55: This line number is where loghelper was called.
+    simple_pass.test:56: You will see this.
 === RUN   simple_pass/TestOK_skiphelper
+--- SKIP: simple_pass/TestOK_skiphelper
+    simple_pass.test:60: You will see this.
+    simple_pass.test:61: This line number is where skiphelper was called.
 --- SKIP: simple_pass/TestOK_skiphelper
     simple_pass.test:60: You will see this.
     simple_pass.test:61: This line number is where skiphelper was called.
