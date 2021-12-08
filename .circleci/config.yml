@@ -67,4 +67,3 @@ workflows:
           requires:
             - test-singles-bash5
             - test-alls-bash5
-

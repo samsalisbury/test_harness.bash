@@ -65,3 +65,21 @@ shellcheck:
 	@find -E . -regex '^.*\.(test|bash)$$' -not -regex '^.*/.testdata/.*$$' | xargs shellcheck
 	@echo "shellcheck ok"
 
+DOCKER_REPO := test-testing.bash
+BASH_3 := 3.2.57
+BASH_5 := 5.0.7
+
+BASH_VERSION ?= $(BASH_3)
+BASH_TAG := $(DOCKER_REPO)-$(BASH_VERSION):latest
+DOCKER_BUILD := docker build --build-arg BASH_VERSION=$(BASH_VERSION) \
+	-t $(BASH_TAG) -f test.Dockerfile .
+
+.PHONY: test-in-docker
+test-in-docker:
+	$(DOCKER_BUILD)
+	docker run $(BASH_TAG)
+
+.PHONY: docker-shell
+docker-shell:
+	$(DOCKER_BUILD)
+	docker run -it --rm $(BASH_TAG) /usr/local/bin/bash

@@ -207,7 +207,12 @@ _match() { echo "$1" | grep -E "$2" > /dev/null >&1 || return 1; }
 
 _HAS_RUN_TESTS=false
 
-trap _handle_file_exit EXIT
+if $SINGLE_FILE_MODE; then
+_handle_file_exit() {
+	exit $?
+}
+
+else
 
 _handle_file_exit() {
   CODE=$?
@@ -249,6 +254,9 @@ _handle_file_exit() {
   _error "ok        $TEST_FILE_NAME" 
   exit 0
 }
+fi
+
+trap _handle_file_exit EXIT
 
 run_tests() {
   for T in "$@"; do
