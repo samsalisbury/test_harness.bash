@@ -4,10 +4,18 @@ SHELL := /usr/bin/env bash -euo pipefail -c
 clean:
 	rm -rf $$(find . -type d -name .testdata)
 
-fundamental_test:
-	@cd test && ./$@ simple_pass.test
-	@cd test && ./$@ simple_fail.test
-	@cd test && ./$@ main.test
+FUNDAMENTAL := cd test && ./fundamental_test
+
+fundamental: fundamental_pass fundamental_fail fundamental_main
+
+fundamental_pass:
+	@$(FUNDAMENTAL) simple_pass.test
+
+fundamental_fail:
+	@$(FUNDAMENTAL) simple_fail.test
+
+fundamental_main:
+	@$(FUNDAMENTAL) main.test
 
 TESTS_SHOULDPASS := $(shell cd test && find . -mindepth 1 -maxdepth 1 -type f -name '*.test' -not -name '*_fail.test')
 TESTS_SHOULDFAIL := $(shell cd test && find . -mindepth 1 -maxdepth 1 -type f -name '*_fail.test')
