@@ -87,3 +87,9 @@ workflows:
             - test-singles-bash5
             - test-alls-bash5
 
+      - test-singles-bash512
+      - test-alls-bash512
+      - test-bash512:
+          requires:
+            - test-singles-bash512
+            - test-alls-bash512
