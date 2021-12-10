@@ -16,7 +16,7 @@ commands:
       - run: bash --version
       - run:
           name: Install Dependencies
-          command: apk add make bc coreutils
+          command: apk add make bc coreutils git openssh
       - checkout
 
 jobs:
