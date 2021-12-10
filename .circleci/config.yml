@@ -5,6 +5,10 @@ executors:
     docker:
       - image: bash:5.0.7
     shell: /usr/bin/env bash -euo pipefail -c
+  bash_5-1-12:
+    docker:
+      - image: bash:5.1.12
+    shell: /usr/bin/env bash -euo pipefail -c
   bash_3-2-57:
     docker:
       - image: bash:3.2.57
@@ -20,6 +24,21 @@ commands:
       - checkout
 
 jobs:
+  test-singles-bash512:
+    executor: bash_5-1-12
+    steps:
+      - prep
+      - run: make test-singles
+  test-alls-bash512:
+    executor: bash_5-1-12
+    steps:
+      - prep
+      - run: make test-alls
+  test-bash512:
+    executor: bash_5-1-12
+    steps:
+      - prep
+      - run: make test
   test-singles-bash5:
     executor: bash_5-0-7
     steps:
