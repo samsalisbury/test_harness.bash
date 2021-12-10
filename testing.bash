@@ -256,26 +256,37 @@ _handle_file_exit() {
   exit 0
 }
 
+error_trap() {
+  # Hack to get proper line number for failing commands in old versions of Bash.
+  export CUR_LINE_NO=
+  export PREV_LINE_NO=
+  # Simply using this DEBUG trap fixes the BASH_COMMAND var in _handle_test_error below.
+  #if (( ${BASH_VERSION%%.*} <= 3 )) || [[ ${BASH_VERSION%.*} = 4.0 ]]; then
+    set -o functrace
+    trap 'PREV_LINE_NO=$CUR_LINE_NO; CUR_LINE_NO=$LINENO' DEBUG
+  #fi
+  # End hack.
+  
+  trap '_handle_test_error "$BASH_COMMAND" "${BASH_LINENO}" "$PREV_LINE_NO" "$?"' ERR
+}
+
 run_tests() {
   for T in "$@"; do
-  (
     # Because these tests run during the EXIT trap handler, we cannot define a
     # new EXIT handler. Therefore, we wrap the test in a function and handle
     # test exit using the RETURN trap instead.
     test_wrapper() {
       set_test_info "$T"
+      # If debug, print the name and location of this test func. 
       [[ $LOG_LEVEL -gt 1 ]] && { shopt -s extdebug; declare -F "$T"; }
-      #trap '_handle_test_exit' RETURN
-      # If debug, print the name and location of this test func.
-      ( 
-      	begin_test "$T"
-      	set -E +e
-      	$T
-      )
+      error_trap
+      trap '_handle_test_exit' EXIT
+      begin_test "$T"
+	  set -E +e
+      $T
       return $?
     }
-    ( test_wrapper; )
-  )
+	( test_wrapper; )
   done
   wait
 }
@@ -373,17 +384,8 @@ begin_test() {
   start_timer "$TESTDATA/start-time"
   _add_test; _log "=== RUN   $TEST_ID"
 
-  # Hack to get proper line number for failing commands in old versions of Bash.
-  export CUR_LINE_NO=
-  export PREV_LINE_NO=
-  # Simply using this DEBUG trap fixes the BASH_COMMAND var in _handle_test_error below.
-  if (( ${BASH_VERSION%%.*} <= 3 )) || [[ ${BASH_VERSION%.*} = 4.0 ]]; then
-    set -o functrace
-    trap 'PREV_LINE_NO=$CUR_LINE_NO; CUR_LINE_NO=$LINENO' DEBUG
-  fi
-
-  trap '_handle_test_error "$BASH_COMMAND" "${BASH_LINENO}" "$PREV_LINE_NO" "$?"' ERR
-  trap _handle_test_exit EXIT
+  #trap '_handle_test_error "$BASH_COMMAND" "${BASH_LINENO}" "$PREV_LINE_NO" "$?"' ERR
+  #trap _handle_test_exit EXIT
   
   TEST_WORKDIR="$TESTDATA/work"
   mkdir -p "$TEST_WORKDIR"
