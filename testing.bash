@@ -7,28 +7,27 @@
 #
 # To write a test, create an executable file called <filename>.test, which
 # uses a bash shebang line, e.g. '#!/usr/bin/env bash' and then sources this file
-# e.g. 'source testing.bash. You can then write tests in the following
-# format (note each test must be in parentheses to make it a subshell).
+# e.g. 'source testing.bash. You can then write tests as functions with names
+# beginning with "Test":
 #
 #   #!/usr/bin/env bash
 #
 #   source testing.bash
 #
-#   (
-#     begin_test some-unique-test-name
-#     
+#   TestExample() {
 #     [ $((1+1)) = 2 ] || error "maths is broken"
 #     true || fatal "logic is broken"
-#     
 #     run some command you want to test
-#   )
+#   }
 #
-# After calling begin_test you will be in a fresh, empty working directory
+# Each test is run in a fresh, empty working directory
 # named .testdata/<test-file-name>/<test-name>/work so you can safely create
-# files etc in the current directory.
+# files and directories in the current directory.
 # 
 # Use 'run' to run arbitrary commands, ensuring their output is logged properly.
 # if the command fails, the test is marked as failed.
+# Use 'mustrun' in a similar way to 'run' except that failures are treated as
+# fatal, and immediately end the test.
 # Use 'error' to fail the test with an error message, but allow it to continue.
 # Use 'fatal' to fail the test with an error message immediately.
 #
@@ -38,8 +37,12 @@
 # invoke ./testing.bash to run all test files in the filesystem hierarchy
 # rooted in the current directory.
 
-#if ! ${TESTING_BASH_SOURCED:-false}; then
-export TESTING_BASH_SOURCED=true
+
+if ! ${TESTING_BASH_SOURCED:-false}; then
+
+# Never export TESTING_BASH_SOURCED because we sometimes need to spawn additional
+# instances of testing.bash which need to themselves also source testing.bash.
+TESTING_BASH_SOURCED=true
 
 set -euo pipefail
 
@@ -52,6 +55,7 @@ Options:
   -h --help        Show this help.
   -v               Verbose mode                             (sets VERBOSE=YES)
   -d               Debug mode                               (sets DEBUG=YES)
+  -x               Bash set -x
   -run <pattern>   Filter tests by regex <pattern>          (sets RUN=<pattern>)
   -list            List all tests (after -run filtering)    (sets LIST_ONLY=YES)
   -notime          Do not print test durations.             (sets NOTIME=YES)
@@ -73,6 +77,8 @@ while [ ! $# -eq 0 ]; do
       export VERBOSE=YES ;;
     -d)
       export DEBUG=YES ;;
+    -x)
+      export DEBUG=YES && set -x;;
     -run)
       shift
       [[ -n "${1:-}" ]] || { echo '-run flag requires argument'; exit 1; }
@@ -259,12 +265,12 @@ run_tests() {
     test_wrapper() {
       set_test_info "$T"
       [[ $LOG_LEVEL -gt 1 ]] && { shopt -s extdebug; declare -F "$T"; }
-      trap '_handle_test_exit' RETURN
+      #trap '_handle_test_exit' RETURN
       # If debug, print the name and location of this test func.
       ( 
-      begin_test "$T"
-      set -E +e
-      $T
+      	begin_test "$T"
+      	set -E +e
+      	$T
       )
       return $?
     }
@@ -285,32 +291,32 @@ _handle_test_error() {
   exit 0
 }
 
-if [[ "${NOTIME:-}" != YES ]]; then
-# Sniff out gdate (GNU date as installed by homebrew on Mac), use that if available.
-# GNU date allows microsecond accuracy, so is always preferable.
-[ -z "${DATE_PROG:-}" ] && command -v gdate > /dev/null 2>&1 && DATE_PROG="gdate"
-[ -z "${DATE_PROG:-}" ] && DATE_PROG="date"
-# Generate a date using the selected program, so we can check if it supports %N.
-TEST_DATE="$("$DATE_PROG" +%s%N)"
-if [[ ${#TEST_DATE} -gt 13 ]]; then
-now_nano() { $DATE_PROG +%s%N; } # Using high precision timing.
-format_duration() {
-  printf " (%.3fs)" "$(bc <<< "scale=3; (($END - $START) / 1000000000)")"
-}
+if [[ "${NOTIME:-}" == YES ]]; then
+	start_timer() { true; }
+	read_timer() { true; }
 else
-TIP="Try installing coreutils."
-[[ "$(uname)" = Darwin ]] && TIP="Try 'brew install coreutils'."
-echo "WARNING: Please install GNU date for high precision timers. $TIP" 1>&2
-now_nano() { $DATE_PROG +%s000000000; } # Only second precision available.
-format_duration() {
-  printf " (%ss)" "$(bc <<< "scale=0; (($END - $START) / 1000000000000)")"
-}
-fi
-start_timer() { now_nano > "$1"; }
-read_timer() { END=$(now_nano) && START="$(cat "$1")" && format_duration; }
-else
-start_timer() { true; }
-read_timer() { true; }
+	# Sniff out gdate (GNU date as installed by homebrew on Mac), use that if available.
+	# GNU date allows microsecond accuracy, so is always preferable.
+	[ -z "${DATE_PROG:-}" ] && command -v gdate > /dev/null 2>&1 && DATE_PROG="gdate"
+	[ -z "${DATE_PROG:-}" ] && DATE_PROG="date"
+	# Generate a date using the selected program, so we can check if it supports %N.
+	TEST_DATE="$("$DATE_PROG" +%s%N)"
+	if [[ ${#TEST_DATE} -gt 13 ]]; then
+		now_nano() { $DATE_PROG +%s%N; } # Using high precision timing.
+		format_duration() {
+		  printf " (%.3fs)" "$(bc <<< "scale=3; (($END - $START) / 1000000000)")"
+		}
+	else
+		TIP="Try installing coreutils."
+		[[ "$(uname)" = Darwin ]] && TIP="Try 'brew install coreutils'."
+		echo "WARNING: Please install GNU date for high precision timers. $TIP" 1>&2
+		now_nano() { $DATE_PROG +%s000000000; } # Only second precision available.
+		format_duration() {
+		  printf " (%ss)" "$(bc <<< "scale=0; (($END - $START) / 1000000000000)")"
+		}
+	fi
+	start_timer() { now_nano > "$1"; }
+	read_timer() { END=$(now_nano) && START="$(cat "$1")" && format_duration; }
 fi
 
 
@@ -436,7 +442,7 @@ run_test_files() {
 
 run_all_test_files() {
   # shellcheck disable=SC2044
-  for F in $(find . -mindepth 1 -name '*.test'); do
+  for F in $(find . -type f -mindepth 1 -name '*.test' -not -path '*/.*'); do
     [ -x "$F" ] || {
       _log "$F is not executable"
       continue
@@ -451,5 +457,4 @@ run_all_test_files() {
 
 if $SINGLE_FILE_MODE; then setup_single_test_file; else run_test_files; fi
 
-#fi
-
+fi # End TESTING_BASH_SOURCED check.
