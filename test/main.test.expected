@@ -68,8 +68,16 @@
 --- PASS: main/Test/fail/exit1_from_test
     $ ./the.test -v -notime -run .
     === RUN   the/TestExit1
+    --- FAIL: the/TestExit1
+        Test body failed with exit code 1
+    FAIL
+    fail      the
     $ ./testing.bash -v -notime -run . ./...
     === RUN   the/TestExit1
+    --- FAIL: the/TestExit1
+        Test body failed with exit code 1
+    FAIL
+    fail      the
 === RUN   main/Test/fail/exit2_before_test
 --- PASS: main/Test/fail/exit2_before_test
     $ ./the.test -v -notime -run .
