@@ -17,6 +17,28 @@ fundamental_fail:
 fundamental_main:
 	@$(FUNDAMENTAL) main.test
 
+test/bash3.2.57: BASH_VERSION=3.2.57
+test/bash3.2.57: docker/test
+
+test/bash5.0.7: BASH_VERSION=5.0.7
+test/bash5.0.7: docker/test
+
+test/bash5.1.12: BASH_VERSION=5.1.12
+test/bash5.1.12: docker/test
+
+docker/test:
+	\
+		echo "FROM bash:$(BASH_VERSION)" > test.Dockerfile; \
+		echo "RUN apk add make bc coreutils" >> test.Dockerfile; \
+		TAG=testing.bash$(BASH_VERSION) && \
+		docker build \
+			--tag $$TAG \
+			--file test.Dockerfile . && \
+		docker run \
+			-v "$$PWD":/testing.bash $$TAG \
+			bash -c 'cd /testing.bash && make fundamental'
+
+
 TESTS_SHOULDPASS := $(shell cd test && find . -mindepth 1 -maxdepth 1 -type f -name '*.test' -not -name '*_fail.test')
 TESTS_SHOULDFAIL := $(shell cd test && find . -mindepth 1 -maxdepth 1 -type f -name '*_fail.test')
 
