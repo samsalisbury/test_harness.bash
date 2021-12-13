@@ -17,14 +17,22 @@ fundamental_fail:
 fundamental_main:
 	@$(FUNDAMENTAL) main.test
 
-test/bash3.2.57: BASH_VERSION=3.2.57
-test/bash3.2.57: docker/test
+BASH3=bash3 bash3.2 bash3.2.57
 
-test/bash5.0.7: BASH_VERSION=5.0.7
-test/bash5.0.7: docker/test
+bash3 bash3.2 bash3.2.57: BASH_VERSION=3.2.57
+bash3 bash3.2 bash3.2.57: docker/test
 
-test/bash5.1.12: BASH_VERSION=5.1.12
-test/bash5.1.12: docker/test
+bash4 bash4.4 bash4.4.23: BASH_VERSION=4.4.23
+bash4 bash4.4 bash4.4.23: docker/test
+
+bash4.0 bash4.0.44: BASH_VERSION=4.0.44
+bash4.0 bash4.0.44: docker/test
+
+bash5 bash5.1 bash5.1.12: BASH_VERSION=5.1.12
+bash5 bash5.1 bash5.1.12: docker/test
+
+bash5.0 bash5.0.7: BASH_VERSION=5.0.7
+bash5.0 bash5.0.7: docker/test
 
 docker/test:
 	\
