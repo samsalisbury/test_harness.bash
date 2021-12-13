@@ -58,35 +58,21 @@ cp "$FUNDAMENTAL_TEST_FILE" "$TEST_WORKDIR/"
 	  ./testing.bash "$FUNDAMENTAL_TEST_FILE" 2>&1 | tee "$GOT_ALL" | sed "s/^/$FUNDAMENTAL_TEST_FILE (runner): /g" > /dev/stdout
 	) || true
 	
-	## Let's check our assumptions to be extra safe.
-	#diff "$GOT_SINGLE" "$GOT_SINGLE" || {
-	#  echo "    diff not behaving as expected! diff $GOT_SINGLE $GOT_SINGLE not empty!"
-	#  exit 1
-	#}
-	#diff "$GOT_ALL" "$GOT_ALL" || {
-	#  echo "    diff not behaving as expected! diff $GOT_ALL $GOT_ALL not empty!"
-	#  exit 1
-	#}
-	#if ! $UPDATE_EXPECTED; then
-	#diff "$WANT" "$WANT" || {
-	#  echo "    diff not behaving as expected! diff $WANT $WANT not empty!"
-	#  exit 1
-	#}
-	#fi
-	
 	FAILED=NO
 	
 	# If these files are different, then we have failed.
 	# Eyeball this failure, sometimes you'll need to update
 	# expectations in the WANT file above
 	echo "=== RUN   fundamental/single=all"
-	if ! diff "$GOT_SINGLE" "$GOT_ALL"; then
+	if ! DIFF="$(diff "$GOT_SINGLE" "$GOT_ALL")"; then
 	  echo "--- FAIL: fundamental/single=all"
 	  echo "    Diff not empty, see above."
 	  echo "    Got:"
 	  sed 's/^/    /g' < "$GOT_SINGLE"
 	  echo "    Want:"
 	  sed 's/^/    /g' < "$GOT_ALL"
+	  echo "    Diff:"
+	  sed 's/^/    /g' < "$DIFF"
 	  FAILED=YES
 	  # If we are trying to update expected, let's at least ensure we got the
 	  # same output both times.
@@ -103,26 +89,30 @@ cp "$FUNDAMENTAL_TEST_FILE" "$TEST_WORKDIR/"
 	fi
 	
 	echo "=== RUN   fundamental/single=want"
-	if ! diff "$GOT_SINGLE" "$WANT"; then
+	if ! DIFF="$(diff "$WANT" "$GOT_SINGLE")"; then
 	  echo "--- FAIL: fundamental/single=want"
 	  echo "    Diff not empty, see above."
 	  echo "    Got:"
 	  sed 's/^/    /g' < "$GOT_SINGLE"
 	  echo "    Want:"
 	  sed 's/^/    /g' < "$WANT"
+	  echo "    Diff:"
+	  sed 's/^/    /g' < "$DIFF"
 	  FAILED=YES
 	else
 	  echo "--- PASS: fundamental/single=want"
 	fi
 	
 	echo "=== RUN   fundamental/all=want"
-	if ! diff "$GOT_ALL" "$WANT"; then
+	if ! DIFF="$(diff "$WANT" "$GOT_ALL")"; then
 	  echo "--- FAIL: fundamental/ALL"
 	  echo "    Diff not empty, see above."
 	  echo "    Got:"
 	  sed 's/^/    /g' < "$GOT_ALL"
 	  echo "    Want:"
 	  sed 's/^/    /g' < "$WANT"
+	  echo "    Diff:"
+	  sed 's/^/    /g' < "$DIFF"
 	  FAILED=YES
 	else
 	  echo "--- PASS: fundamental/all=want"

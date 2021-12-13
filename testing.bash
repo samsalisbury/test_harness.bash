@@ -256,15 +256,18 @@ _handle_file_exit() {
   exit 0
 }
 
+BASH_MAJOR="$(cut -d. -f1 <<< "$BASH_VERSION")"
+BASH_MINOR="$(cut -d. -f2 <<< "$BASH_VERSION")"
+
 error_trap() {
-  # Hack to get proper line number for failing commands in old versions of Bash.
-  export CUR_LINE_NO=
   export PREV_LINE_NO=
+  # Hack to get proper line number for failing commands in old versions of Bash.
   # Simply using this DEBUG trap fixes the BASH_COMMAND var in _handle_test_error below.
-  #if (( ${BASH_VERSION%%.*} <= 3 )) || [[ ${BASH_VERSION%.*} = 4.0 ]]; then
+  if (( BASH_MAJOR < 5 )) || (( BASH_MINOR > 0 )); then
+  	export CUR_LINE_NO=
     set -o functrace
     trap 'PREV_LINE_NO=$CUR_LINE_NO; CUR_LINE_NO=$LINENO' DEBUG
-  #fi
+  fi
   # End hack.
   
   trap '_handle_test_error "$BASH_COMMAND" "${BASH_LINENO}" "$PREV_LINE_NO" "$?"' ERR
@@ -383,10 +386,7 @@ begin_test() {
 
   start_timer "$TESTDATA/start-time"
   _add_test; _log "=== RUN   $TEST_ID"
-
-  #trap '_handle_test_error "$BASH_COMMAND" "${BASH_LINENO}" "$PREV_LINE_NO" "$?"' ERR
-  #trap _handle_test_exit EXIT
-  
+ 
   TEST_WORKDIR="$TESTDATA/work"
   mkdir -p "$TEST_WORKDIR"
   
